@@ -1,0 +1,62 @@
+Final Project:
+- NO public attributes
+- NO duplicated code
+
+Dijkstra's Algorithm:
+
+private void Dijkstra(LandNode[][], firstNode, lastNode){
+	pQueue[landNodes]
+	pQueue.add(firstNode);
+	while(!pQueue.isEmpty){
+		landNode result = pQueue.removeMin();
+		for(int i = 0; i < result.getConnectionCount();i++){
+			if(result.connection(i).getPrev != null){
+				if(result.connection(i).getPriority > result.connection(i).getBid() + result.getPriority(){
+					result.connection(i).setPriority = result.getPriority + result.connection(i).getBid();
+					result.connection(i).setPrev = result;
+					pQueue.add(result.connection(i));
+				}
+			}else{
+				result.connection(i).setPriority = result.getPriority + result.connection(i).getBid();
+				result.connection(i).setPrev = result;
+				pQueue.add(result.connection(i));
+			}
+			
+		}
+	}
+}
+
+
+LandNode Class:
+
+	Instance Variables:
+		
+		private int ownership;
+		private	int currentBid;
+		private LandNode[] connections;
+		//For Cheaper Reset
+		private LandNode[] disconnections;
+
+		Dijkstra Info:
+		private int priority;
+		private LandNode prev;
+
+	Getters and Setters:
+
+	public int getConnectionCount(){
+		int num = 0;
+		for(int i = 0; i < connections.length;i++)
+			if(connections[i] != null) num++
+		return num;	
+	}
+	
+	public LandNode connection(int desired){
+		int encounter = 0;
+		for(int i = 0; i < connection.length;i++){
+			if(connection[i] != null){
+				if(encounter == desired) return connection[i];
+				encounter++;
+			}
+		}
+	}
+ 
