@@ -16,9 +16,9 @@ public class LandBaronsModel {
 	
 	private int playerTwoBudget;
 	
-	boolean passedLastTurn;
+	private boolean passedLastTurn;
 	
-	boolean gameFinished;
+	private boolean gameFinished;
 	
 
 	
