@@ -1,7 +1,7 @@
 package application;
 
 
-public class LandNode {
+public class LandNode implements Comparable<LandNode> {
 
 	/**
 	 * 	-2:	Land is public land, and cannot be bought or traversed
@@ -18,6 +18,11 @@ public class LandNode {
 	private int maximumConnections;
 
 	private int priority;
+	
+	public final static boolean FAILURE = false;
+	
+	public final static boolean SUCCESS = true;
+	
 	
 
 	private LandNode prev;
@@ -56,10 +61,11 @@ public class LandNode {
 
 	public void makeBid(int owner) {
 		bid++;
+		priority++;
 		ownership = owner;
 	}
 	
-	public int getConnections() {
+	public int getConnectionCount() {
 		int connectionCount = 0;
 		for(int i = 0; i < connections.length; i++)
 			if(connections[i] != null)
@@ -83,6 +89,65 @@ public class LandNode {
 		}
 		return null;
 
+	}
+	
+	public int getPriority() {
+		return priority;
+	}
+	
+	public LandNode getPrevious() {
+		return prev;
+	}
+	
+	public boolean setOwnership(int newOwner) {
+		if(newOwner < -2 || newOwner > 2)
+			return FAILURE;
+		else if(ownership < 0)
+			return FAILURE;
+		else
+			ownership = newOwner;
+		return SUCCESS;
+	}
+	
+	public void setPrevious(LandNode newPrev) {
+		prev = newPrev;
+	}
+	
+	public void disableMe(LandNode other) {
+		for(int i = 0; i < connections.length;i++) {
+			if(other.equals(connections[i])) {
+				disconnectedNodes[i] = connections[i];
+				connections[i] = null;
+			}
+		}
+	}
+	
+	public void reset() {
+		resetConnections();
+		bid = 0;
+		ownership = 0;
+		priority = 0;
+		prev = null;
+	}
+	
+	private void resetConnections() {
+		for(int i = 0; i < disconnectedNodes.length;i++) {
+			if(disconnectedNodes[i] != null) {
+				connections[i] = disconnectedNodes[i];
+				disconnectedNodes[i] = null;
+			}
+		}
+	}
+
+	@Override
+	public int compareTo(LandNode other) {
+		// TODO Auto-generated method stub
+		if(priority > other.getPriority())
+			return 1;
+		else if(priority < other.getPriority())
+			return -1;
+		else
+			return 0;
 	}
 
 

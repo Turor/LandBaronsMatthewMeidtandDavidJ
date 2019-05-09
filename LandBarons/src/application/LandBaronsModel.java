@@ -74,8 +74,95 @@ public class LandBaronsModel {
 	}
 	
 	private void initializeBoard() {
-		//TODO: Cycle through every node in the board calling their constructors
-		//TODO: Cycle through the board and create the connections to their neighbors
+		constructBoard();
+		connectBoard();
+	}
+	
+	private void constructBoard() {
+		for(int row = 0; row < board.length; row++) {
+			for(int col = 0; col < board[row].length;col++) {
+				board[row][col] = new LandNode();
+			}
+		}
+		
+	}
+	
+	private void connectBoard() {
+		makeInternalNodeConnections();
+		makeFirstRowConnections();
+		makeLastRowConnections();
+		makeFirstColumnConnections();
+		makeLastColumnConnections();
+		makeCornerConnections();
+	}
+	
+	private void makeInternalNodeConnections() {
+		for(int row = 1; row < board.length-1;row++)
+			for(int col = 1; col < board[row].length-1;col++) {
+				connectABOVE(row,col);
+				connectRIGHT_OF(row,col);
+				connectBELOW(row,col);
+				connectLEFT_OF(row,col);
+			}
+	}
+	
+	private void connectABOVE(int row, int col) { 
+		board[row][col].connectNodes(board[row-1][col],ABOVE);
+	}
+	
+	private void connectRIGHT_OF(int row, int col) {
+		board[row][col].connectNodes(board[row][col+1],RIGHT_OF);
+	}
+	
+	private void connectBELOW(int row, int col) {
+		board[row][col].connectNodes(board[row+1][col],BELOW);
+	}
+	
+	private void connectLEFT_OF(int row, int col) {
+		board[row][col].connectNodes(board[row][col-1],LEFT_OF);
+	}
+
+	private void makeFirstRowConnections() {
+		for(int col = 1,row = 0; col < board.length-1;col++) {
+			connectRIGHT_OF(row,col);
+			connectBELOW(row,col);
+			connectLEFT_OF(row,col);
+		}
+	}
+
+	private void makeLastRowConnections() {
+		for(int col = 1, row = board.length-1; col < board.length-1; col++) {
+			connectABOVE(row,col);
+			connectRIGHT_OF(row,col);
+			connectLEFT_OF(row,col);
+		}
+	}
+	
+	private void makeFirstColumnConnections() {
+		for(int col = 0, row = 1; row < board.length-1; row++) {
+			connectABOVE(row,col);
+			connectRIGHT_OF(row,col);
+			connectBELOW(row,col);
+		}
+	}
+	
+	private void makeLastColumnConnections() {
+		for(int col = board.length-1, row = 1; row < board.length-1; row++) {
+			connectABOVE(row,col);
+			connectLEFT_OF(row,col);
+			connectBELOW(row,col);
+		}
+	}
+	
+	private void makeCornerConnections() {
+		connectBELOW(0,0);
+		connectRIGHT_OF(0,0);
+		connectLEFT_OF(0,board.length-1);
+		connectBELOW(0,board.length-1);
+		connectABOVE(board.length-1,0);
+		connectRIGHT_OF(board.length-1,0);
+		connectABOVE(board.length-1,board.length-1);
+		connectLEFT_OF(board.length-1,board.length-1);
 	}
 	
 	private void initBudget() {
@@ -84,7 +171,6 @@ public class LandBaronsModel {
 	}
 	
 	private void gameFinished() {
-		LinkedList<LandNode> path = cheapestPath();
 		//TODO: for each node in path, sum player one and player 2
 		//TODO: Add unspent budgets to their players sums*10
 		//TODO: Inform listeners that the game is done and disallow further moves game moves
@@ -92,7 +178,9 @@ public class LandBaronsModel {
 	
 
 	private void resetNodes() {
-		//TODO: Visits all nodes and calls their reset methods
+		for(int row = 0; row < board.length;row++)
+			for(int col = 0; col < board[row].length;col++)
+				board[row][col].reset();
 	}
 	
 	private void addSpecialNodes() {
@@ -105,11 +193,10 @@ public class LandBaronsModel {
 		//TODO: Change winnable accordingly
 	}
 	
-	private LinkedList<LandNode> cheapestPath(){
-		LinkedList<LandNode> path = new LinkedList<LandNode>();
-		//TODO: Write Djikstras
+	private void cheapestPath(){
 		
-		return path;
+		//TODO: Write Djikstras
+
 	}
 	
 	private boolean isValidMove(int row, int col) {
@@ -119,7 +206,18 @@ public class LandBaronsModel {
 	
 	public String toString() {
 		//TODO: Inform users what the status of the game is
-		return "";
+		String s = "";
+		if(gameFinished) {
+			s += "The game has ended!\n";
+		}else {
+			if(turnCount%2 == 0)
+				s+= "It is Player 1's turn!\n";
+			else
+				s+= "It is Player 2's turn!\n";
+			s+= "Player 1 has " + playerOneBudget + "$ left to bid\n";
+			s+= "Player 2 has " + playerTwoBudget + "$ left to bid\n";
+		}
+		return s;
 	}
 	
 	
