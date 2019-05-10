@@ -61,10 +61,11 @@ public class LandNode implements Comparable<LandNode> {
 		return bid;
 	}
 
-	public void makeBid(int owner) {
+	public int makeBid(int owner) {
 		bid++;
 		priority++;
 		ownership = owner;
+		return bid;
 	}
 	
 	public int getConnectionCount() {
