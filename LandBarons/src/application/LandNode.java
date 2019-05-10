@@ -45,6 +45,8 @@ public class LandNode implements Comparable<LandNode> {
 		connections = new LandNode[maximumConnections];
 		disconnectedNodes = new LandNode[maximumConnections];
 		bid = 0;
+		priority = 0;
+		prev = null;
 	}
 
 	public int getOwnership() {
@@ -95,12 +97,20 @@ public class LandNode implements Comparable<LandNode> {
 		return priority;
 	}
 	
+	public void setPriority(int newpriority) {
+		priority = newpriority;
+	}
+	
+	public void setPrev(LandNode newprev) {
+		prev = newprev;
+	}
+	
 	public LandNode getPrevious() {
 		return prev;
 	}
 	
 	public boolean setOwnership(int newOwner) {
-		if(newOwner < -2 || newOwner > 2)
+		if(newOwner < -3 || newOwner > 2)
 			return FAILURE;
 		else if(ownership < 0)
 			return FAILURE;
@@ -148,6 +158,13 @@ public class LandNode implements Comparable<LandNode> {
 			return -1;
 		else
 			return 0;
+	}
+	
+	public String toString() {
+		String s = "";
+		//s += ownership + "," + bid;
+		s += priority + ", " + ownership;
+		return s;
 	}
 
 
