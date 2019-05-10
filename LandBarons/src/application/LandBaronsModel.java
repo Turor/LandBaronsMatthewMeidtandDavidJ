@@ -56,6 +56,10 @@ public class LandBaronsModel {
 			//TODO: Inform the view why the move was illegal
 			;
 	}
+	
+	public int getSize() {
+		return size-2;
+	}
 
 	public void pass() {
 		if(passedLastTurn)
