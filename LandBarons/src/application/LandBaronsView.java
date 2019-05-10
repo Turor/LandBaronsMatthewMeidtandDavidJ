@@ -12,7 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.GridPane;
 
 
-public class Main extends Application implements EventHandler<ActionEvent> {
+public class LandBaronsView extends Application implements EventHandler<ActionEvent> {
 	private LandBaronsModel model;
 	private Button reset;
 	private ComboBox sizeCB;
