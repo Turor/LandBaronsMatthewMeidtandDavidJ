@@ -12,6 +12,7 @@ public class LandNode implements Comparable<LandNode> {
 	 *   2: Land is currently owned by player 2
 	 */
 	private int ownership;
+	//hi
 
 	private int bid;
 
