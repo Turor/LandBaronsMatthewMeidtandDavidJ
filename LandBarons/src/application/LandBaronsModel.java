@@ -1,6 +1,7 @@
 package application;
 
-import java.util.Objects;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Random;
 
 public class LandBaronsModel {
@@ -25,6 +26,8 @@ public class LandBaronsModel {
 	private boolean passedLastTurn;
 
 	private boolean gameFinished;
+	
+	private PropertyChangeSupport pcs;
 
 
 
@@ -36,8 +39,14 @@ public class LandBaronsModel {
 		//TODO: Maybe warn players of their actions?	
 		initializeModel(size+2);
 	}
+	
+	public int getBid(int row, int col) {
+		row++; col++; //No one knows we added a padding row and column
+		return board[row][col].getBid();
+	}
 
 	public void makeMove(int row, int col) {
+		row++; col++; //No one else knows we added a padding row and column
 		if(isValidMove(row, col))
 			//TODO: do the move
 			//TODO: Change the state of the boolean referring to passes
@@ -188,6 +197,15 @@ public class LandBaronsModel {
 
 	private boolean isValidMove(int row, int col) {
 		//TODO: Determine if the move is valid
+		if(turnCount%2 == 0) { //It's P1s turn
+			if(playerOneBudget > board[row][col].getBid()) { //P1 could afford the bid
+				board[row][col].makeBid(PLAYER_ONE_OWNED);
+				//this.pcs.firePropertyChange("",,);
+				
+			}
+		}else { //It's P2s turn
+			
+		}
 		return false;
 	}
 
@@ -213,6 +231,14 @@ public class LandBaronsModel {
 	public LandNode[][] getBoardClone(){
 		return board.clone();
 	}
+	
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        this.pcs.addPropertyChangeListener(listener);
+    }
+    
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        this.pcs.removePropertyChangeListener(listener);
+    }
 
 	private static final int SOURCE_OR_DESTINATION = -3;
 	private static final int PUBLIC_LAND = -2;
