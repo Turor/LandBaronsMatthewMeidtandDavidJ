@@ -5,28 +5,26 @@ import java.beans.PropertyChangeSupport;
 import java.util.Random;
 
 public class LandBaronsModel {
-	
+
 	/**
 	 * Size adds an extra 2 cells to the vertical and horizontal
-	 * size to facilitate edge detection without generation of a
-	 * stack trace
+	 * size to facilitate edge detection without using out of bounds
+	 * exceptions
 	 */
 	private int size;
 
-	private int turnCount;
+	private int playersTurn;
 
 	private boolean winnable;
 
 	private LandNode[][] board;
 
-	private int playerOneBudget;
-
-	private int playerTwoBudget;
+	private int[] playerBudgets;
 
 	private boolean passedLastTurn;
 
 	private boolean gameFinished;
-	
+
 	private PropertyChangeSupport pcs;
 
 
@@ -39,24 +37,53 @@ public class LandBaronsModel {
 		//TODO: Maybe warn players of their actions?	
 		initializeModel(size+2);
 	}
-	
+
 	public int getBid(int row, int col) {
 		row++; col++; //No one knows we added a padding row and column
 		return board[row][col].getBid();
 	}
 
-	public void makeMove(int row, int col) {
+	public void move(int row, int col) {
+		//TODO: Add move to the move stack to facilitate undos?
 		row++; col++; //No one else knows we added a padding row and column
-		if(isValidMove(row, col))
-			//TODO: do the move
-			//TODO: Change the state of the boolean referring to passes
-			//TODO: Add move to the move stack to facilitate undos?
-			;
-		else
-			//TODO: Inform the view why the move was illegal
-			;
+		if(isBiddableTile(row, col))
+			if(isAffordableBid(playersTurn,row,col)) {
+				executeMove(playersTurn,row,col);
+			}else {
+				fireInvalidMoveDueToMoneyEvent(playersTurn,row,col);
+			}
+
+		else {
+			this.fireInvalidMoveDueToUnbiddableTileEvent(playersTurn, row, col);		
+		}
 	}
-	
+
+	private void executeMove(int player,int row,int col) {
+		
+		int currentBid = board[row][col].getBid();
+		int currentOwner = board[row][col].getOwnership();
+		if(currentOwner == PLAYER_ONE_OWNED) {
+			//Player One gets a refund of their current bid
+			playerBudgets[PLAYER_ONE] +=currentBid;	
+		}else if(currentOwner == PLAYER_TWO_OWNED) {
+			//Player two gets a refund of their current bid
+			playerBudgets[PLAYER_TWO] += currentBid;
+		}
+		
+		//The player executing the move pays for the cost of the land
+		playerBudgets[player] -= (currentBid+1);
+		
+		//If statement for readability
+		if(player == PLAYER_ONE)
+			board[row][col].makeBid(PLAYER_ONE_OWNED);
+		else
+			board[row][col].makeBid(PLAYER_TWO_OWNED);
+		
+		playersTurn++; playersTurn %=2; //Update Player Turn
+		passedLastTurn = false; 
+		this.fireValidMove(player, row, col, currentBid);
+	}
+
 	public int getSize() {
 		return size-2;
 	}
@@ -70,7 +97,7 @@ public class LandBaronsModel {
 
 	public void reset() {
 		winnable = false;
-		turnCount = 0;
+		playersTurn = 0;
 		initBudget();
 
 		while(!winnable) {
@@ -82,8 +109,9 @@ public class LandBaronsModel {
 	}
 
 	private void initializeModel(int size) {
+		pcs = new PropertyChangeSupport(this);
 		this.size = size;
-		turnCount = 0;
+		playersTurn = 0;
 		winnable = false;
 		board = new LandNode[size][size];
 		initializeBoard();
@@ -124,10 +152,11 @@ public class LandBaronsModel {
 			}
 		}
 	}
-	
+
 	private void initBudget() {
-		playerOneBudget = (size-2)*(size-2)*2;
-		playerTwoBudget = playerOneBudget;
+		playerBudgets = new int[2];
+		playerBudgets[PLAYER_ONE] = (size-2)*(size-2)*2;
+		playerBudgets[PLAYER_TWO] = playerBudgets[PLAYER_ONE];
 	}
 
 	private void gameFinished() {
@@ -142,7 +171,7 @@ public class LandBaronsModel {
 			for(int col = 1; col < board[row].length-1;col++)
 				board[row][col].reset();
 	}
-	
+
 	//1 through size - 2
 	private void addSpecialNodes() {
 		Random yolo = new Random();
@@ -157,10 +186,10 @@ public class LandBaronsModel {
 							board[row][col].setOwnership(PUBLIC_LAND);
 							failedToAddTile = false;
 						}else {
-							board[row][col].setOwnership(COMPANY_OWNED);
+							board[row][col].setOwnership(COMPANY);
 							failedToAddTile = false;
 						}
-				
+
 			}
 		}
 	}
@@ -199,57 +228,101 @@ public class LandBaronsModel {
 
 	}
 
-	private boolean isValidMove(int row, int col) {
-		//TODO: Determine if the move is valid
-		if(turnCount%2 == 0) { //It's P1s turn
-			if(playerOneBudget > board[row][col].getBid()) { //P1 could afford the bid
-				board[row][col].makeBid(PLAYER_ONE_OWNED);
-				//this.pcs.firePropertyChange("",,);
-				
-			}
-		}else { //It's P2s turn
-			
-		}
-		return false;
+	private boolean isBiddableTile(int row, int col) {
+		return board[row][col].getOwnership() >-1;
 	}
 
+	private boolean isAffordableBid(int player, int row, int col) {
+		int currentOwner = board[row][col].getOwnership();
+		//If a player already owns a tile, they need only add one dollar to
+		//raise a bid.
+		if(currentOwner == player+1)
+			return playerBudgets[player] > 0;
+		return playerBudgets[player] > board[row][col].getBid();
+	}
+
+	private void fireInvalidMoveDueToUnbiddableTileEvent(int player, int row, int col) {
+		int outwardBoundRow = row - 1;
+		int outwardBoundColumn = col-1;
+		String landOwner = "";
+		if(board[row][col].getOwnership() == -3) 
+			landOwner = "Company";		
+		else if(board[row][col].getOwnership() == -2) 
+			landOwner = "Public";		
+		else
+			landOwner = "Company";
+		this.pcs.firePropertyChange("I " + "U " + (player+1) + " " + outwardBoundRow
+				+ " " + outwardBoundColumn + " " + landOwner,false, true);
+	}
+
+	private void fireInvalidMoveDueToMoneyEvent(int player, int row, int col) {
+		int outwardBoundRow = row - 1;
+		int outwardBoundColumn = col-1;
+		this.pcs.firePropertyChange("I " + "$ " + (player+1) + " " + outwardBoundRow 
+				+ " " + outwardBoundColumn, playerBudgets[player], 
+				board[row][col].getBid());
+				
+	}
+
+	private void fireValidMove(int player, int row, int col, int oldValue) {
+		int outwardBoundRow = row - 1;
+		int outwardBoundColumn = col-1;
+		this.pcs.firePropertyChange("V " + "# " + (player+1) + " " + outwardBoundRow 
+				+ " " + outwardBoundColumn,	oldValue, true);
+	}
+
+
+
 	public String toString() {
-		//TODO: Inform users what the status of the game is
 		String s = "";
 		if(gameFinished) {
 			s += "The game has ended!\n";
 		}else {
-			if(turnCount%2 == 0)
+			if(playersTurn == 0)
 				s+= "It is Player 1's turn!\n";
 			else
 				s+= "It is Player 2's turn!\n";
-			s+= "Player 1 has " + playerOneBudget + "$ left to bid\n";
-			s+= "Player 2 has " + playerTwoBudget + "$ left to bid\n";
+			s+= "Player 1 has " + playerBudgets[PLAYER_ONE] + "$ left to bid\n";
+			s+= "Player 2 has " + playerBudgets[PLAYER_TWO] + "$ left to bid\n";
 		}
 		return s;
 	}
-	
+
 	/**
 	 * @return - Copy of the game board, useful for debugging
 	 */
 	public LandNode[][] getBoardClone(){
 		return board.clone();
 	}
-	
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        this.pcs.addPropertyChangeListener(listener);
-    }
-    
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        this.pcs.removePropertyChangeListener(listener);
-    }
+
+	public String printBoard() {
+		String s = "";
+		for(int row = 1; row < board.length-1;row++) {
+			for(int col = 1; col < board.length-1;col++) {
+				s+=board[row][col] + "\t";
+			}
+			s +="\n";
+		}
+		return s;
+	}
+
+	public void addPropertyChangeListener(PropertyChangeListener listener) {
+		this.pcs.addPropertyChangeListener(listener);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener listener) {
+		this.pcs.removePropertyChangeListener(listener);
+	}
 
 	private static final int SOURCE_OR_DESTINATION = -3;
 	private static final int PUBLIC_LAND = -2;
-	private static final int COMPANY_OWNED = -1;
+	private static final int COMPANY = -1;
 	private static final int UNOWNED = 0;
 	private static final int PLAYER_ONE_OWNED = 1;
 	private static final int PLAYER_TWO_OWNED = 2;
+
+	private static final int PLAYER_ONE = 0;
+	private static final int PLAYER_TWO = 1;
 
 	private static final int ABOVE = 0;
 	private static final int RIGHT_OF = 1;
