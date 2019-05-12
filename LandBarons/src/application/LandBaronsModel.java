@@ -102,9 +102,8 @@ public class LandBaronsModel {
 		passedLastTurn = false;
 		gameFinished = false;
 		resetPlayers();
-
-
 		resetNodes();
+		
 		addSpecialNodes();
 
 
