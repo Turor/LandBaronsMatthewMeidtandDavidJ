@@ -11,23 +11,25 @@ public class LandNode implements Comparable<LandNode> {
 	 *   1: Land is currently owned by player 1
 	 *   2: Land is currently owned by player 2
 	 */
-	private int ownership;
+	private LandBaron ownership;
 
 	private int bid;
 
 	private int maximumConnections;
 
 	private int priority;
-	
+
 	public final static boolean FAILURE = false;
-	
+
 	public final static boolean SUCCESS = true;
 	
-	
+	private LandBaron initialOwner;
+
+
 
 	private LandNode prev;
 
-	
+
 	/**
 	 * 0:	Refers to the node above the current node
 	 * 1: 	Refers to the node to the right of the current node
@@ -35,12 +37,13 @@ public class LandNode implements Comparable<LandNode> {
 	 * 3: 	Refers to the node to the left of the current node
 	 */
 	private LandNode[] connections;
-	
+
 	/**Cheaper reset*/
 	private LandNode[] disconnectedNodes;
 
-	public LandNode() {
-		ownership = 0;
+	public LandNode(LandBaron owner) {
+		initialOwner = owner;
+		ownership = owner;
 		maximumConnections = 4;
 		connections = new LandNode[maximumConnections];
 		disconnectedNodes = new LandNode[maximumConnections];
@@ -49,7 +52,7 @@ public class LandNode implements Comparable<LandNode> {
 		prev = null;
 	}
 
-	public int getOwnership() {
+	public LandBaron getOwnership() {
 		return ownership;
 	}
 
@@ -61,13 +64,13 @@ public class LandNode implements Comparable<LandNode> {
 		return bid;
 	}
 
-	public int makeBid(int owner) {
-		bid++;
-		priority++;
-		ownership = owner;
-		return bid;
+	public int makeBid(LandBaron owner) {	
+			bid++;
+			priority = bid;
+			ownership = owner;
+			return bid;
 	}
-	
+
 	public int getConnectionCount() {
 		int connectionCount = 0;
 		for(int i = 0; i < connections.length; i++)
@@ -91,39 +94,40 @@ public class LandNode implements Comparable<LandNode> {
 			}
 		}
 		return null;
-
 	}
-	
+
+	/**
+	 * Prepare the node for undergoing a cheapest path calculation
+	 */
+	public void resetForDijkstra() {
+		prev = null;
+		priority = bid;
+	}
+
 	public int getPriority() {
 		return priority;
 	}
-	
+
 	public void setPriority(int newpriority) {
 		priority = newpriority;
 	}
-	
+
 	public void setPrev(LandNode newprev) {
 		prev = newprev;
 	}
-	
+
 	public LandNode getPrevious() {
 		return prev;
 	}
-	
-	public boolean setOwnership(int newOwner) {
-		if(newOwner < -3 || newOwner > 2)
-			return FAILURE;
-		else if(ownership < 0)
-			return FAILURE;
-		else
-			ownership = newOwner;
-		return SUCCESS;
+
+	public void setOwnership(LandBaron newOwner) {
+		ownership = newOwner;
 	}
-	
+
 	public void setPrevious(LandNode newPrev) {
 		prev = newPrev;
 	}
-	
+
 	public void disableMe(LandNode other) {
 		for(int i = 0; i < connections.length;i++) {
 			if(other.equals(connections[i])) {
@@ -132,15 +136,15 @@ public class LandNode implements Comparable<LandNode> {
 			}
 		}
 	}
-	
+
 	public void reset() {
 		resetConnections();
 		bid = 0;
-		ownership = 0;
+		ownership = initialOwner;
 		priority = 0;
 		prev = null;
 	}
-	
+
 	private void resetConnections() {
 		for(int i = 0; i < disconnectedNodes.length;i++) {
 			if(disconnectedNodes[i] != null) {
@@ -160,7 +164,7 @@ public class LandNode implements Comparable<LandNode> {
 		else
 			return 0;
 	}
-	
+
 	public String toString() {
 		String s = "";
 		//s += ownership + "," + bid;

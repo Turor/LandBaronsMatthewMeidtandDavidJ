@@ -9,10 +9,12 @@ import java.util.Scanner;
 import org.junit.jupiter.api.Test;
 
 public class InitializationTests implements PropertyChangeListener {
+	
+	private LandBaronsModel temp;
 
 	@Test
 	public void printBoard() {
-		LandBaronsModel temp = new LandBaronsModel(5);
+		temp = new LandBaronsModel(5);
 		temp.addPropertyChangeListener(this);
 		System.out.println(temp.printBoard());
 		for(int cycle = 0; cycle < 50; cycle++)
@@ -22,6 +24,8 @@ public class InitializationTests implements PropertyChangeListener {
 					temp.move(0,2);
 				}
 			}
+		System.out.println(temp.printBoard());
+		temp.reset();
 		System.out.println(temp.printBoard());
 
 	}
@@ -35,19 +39,19 @@ public class InitializationTests implements PropertyChangeListener {
 		Scanner friend = new Scanner(event.getPropertyName());
 		char actionValidity = friend.next().charAt(0);
 		char typeOfAction = friend.next().charAt(0);
-		int player = friend.nextInt();
+		String player = friend.next();
 		int row = friend.nextInt();
 		int col = friend.nextInt();
 		
 		if(isInvalidAction(actionValidity))
 			if(isUnbiddable(typeOfAction))
-				System.out.println("That move by player " + player + " was invalid because "
-						+ row + "," + col + " is owned by the " + friend.next());
+				System.out.println("That move by " + player + " was invalid because "
+						+ row + "," + col + " is owned by " + temp.getOwner(row,col));
 			else
-				System.out.println("That move was invalid because player " + player + " did"
+				System.out.println("That move was invalid because " + player + " did"
 						+ " not have enough money to bid on " + row + "," + col);
 		else
-			System.out.println("Player " + player+ " performed a successful move at "
+			System.out.println(player+ " performed a successful move at "
 					+ row + "," + col);
 		friend.close();
 	}

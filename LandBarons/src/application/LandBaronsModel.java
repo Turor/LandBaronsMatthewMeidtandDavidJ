@@ -2,6 +2,7 @@ package application;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.LinkedList;
 import java.util.Random;
 
 public class LandBaronsModel {
@@ -13,7 +14,11 @@ public class LandBaronsModel {
 	 */
 	private int size;
 
-	private int playersTurn;
+	private LandBaron[] npcBarons;
+
+	private LandBaron[] players;
+
+	private LinkedList<LandBaron> turn;
 
 	private boolean winnable;
 
@@ -26,7 +31,6 @@ public class LandBaronsModel {
 	private boolean gameFinished;
 
 	private PropertyChangeSupport pcs;
-
 
 
 	public LandBaronsModel(int size) {
@@ -47,41 +51,28 @@ public class LandBaronsModel {
 		//TODO: Add move to the move stack to facilitate undos?
 		row++; col++; //No one else knows we added a padding row and column
 		if(isBiddableTile(row, col))
-			if(isAffordableBid(playersTurn,row,col)) {
-				executeMove(playersTurn,row,col);
+			if(isAffordableBid(turn.peek(),row,col)) {
+				executeMove(turn.peek(),row,col);
 			}else {
-				fireInvalidMoveDueToMoneyEvent(playersTurn,row,col);
+				fireInvalidMoveDueToMoneyEvent(turn.peek(),row,col);
 			}
 
 		else {
-			this.fireInvalidMoveDueToUnbiddableTileEvent(playersTurn, row, col);		
+			this.fireInvalidMoveDueToUnbiddableTileEvent(turn.peek(), row, col);		
 		}
 	}
 
-	private void executeMove(int player,int row,int col) {
-		
-		int currentBid = board[row][col].getBid();
-		int currentOwner = board[row][col].getOwnership();
-		if(currentOwner == PLAYER_ONE_OWNED) {
-			//Player One gets a refund of their current bid
-			playerBudgets[PLAYER_ONE] +=currentBid;	
-		}else if(currentOwner == PLAYER_TWO_OWNED) {
-			//Player two gets a refund of their current bid
-			playerBudgets[PLAYER_TWO] += currentBid;
-		}
-		
-		//The player executing the move pays for the cost of the land
-		playerBudgets[player] -= (currentBid+1);
-		
-		//If statement for readability
-		if(player == PLAYER_ONE)
-			board[row][col].makeBid(PLAYER_ONE_OWNED);
-		else
-			board[row][col].makeBid(PLAYER_TWO_OWNED);
-		
-		playersTurn++; playersTurn %=2; //Update Player Turn
+	private void executeMove(LandBaron player, int row,int col) {
+
+		//The previous owner receives a refund
+		board[row][col].getOwnership().increaseBudget(board[row][col].getBid());
+
+		board[row][col].makeBid(player);
+		player.decreaseBudget(board[row][col].getBid());
+
+		advanceTurn();
 		passedLastTurn = false; 
-		this.fireValidMove(player, row, col, currentBid);
+		this.fireValidMove(player, row, col);
 	}
 
 	public int getSize() {
@@ -91,49 +82,110 @@ public class LandBaronsModel {
 	public void pass() {
 		if(passedLastTurn)
 			gameFinished();
-		else
+		else {
 			passedLastTurn = true;
+			advanceTurn();
+		}
+	}
+
+	public String getOwner(int row, int col) {
+		row++; col++;
+		return board[row][col].getOwnership().toString();
+	}
+
+	private void advanceTurn() {
+		turn.add(turn.poll());
 	}
 
 	public void reset() {
 		winnable = false;
-		playersTurn = 0;
-		initBudget();
+		passedLastTurn = false;
+		gameFinished = false;
+		resetPlayers();
 
-		while(!winnable) {
-			resetNodes();
-			addSpecialNodes();
-			testWinnability();
+
+		resetNodes();
+		addSpecialNodes();
+
+
+
+	}
+
+	private void resetPlayers() {
+		turn = new LinkedList<LandBaron>();
+		for(int player = 0; player < players.length;player++) {
+			players[player].resetGame(calculateBudget());
+			turn.add(players[player]);
 		}
+	}
 
+	private void resetForDijkstra() {
+		for(int row = 1; row < size-1; row++) {
+			for(int col = 1; col < size-1; col++) {
+				board[row][col].resetForDijkstra();
+			}
+		}
 	}
 
 	private void initializeModel(int size) {
 		pcs = new PropertyChangeSupport(this);
 		this.size = size;
-		playersTurn = 0;
-		winnable = false;
-		board = new LandNode[size][size];
+
+		//Initialize the players names and their corresponding identities
+
+		initializeLandBarons();
+
 		initializeBoard();
 		initBudget();
+		winnable = false;	
 		passedLastTurn = false;
 		gameFinished = false;
 	}
 
+	private void initializeLandBarons() {	
+		initializeNPCS();
+		initializePlayers();
+	}
+
+	private void initializeNPCS() {
+		npcBarons = new LandBaron[4];
+		npcBarons[0] = new LandBaron("The Company", !BIDDABLE,TRAVERSABLE, 0);
+		npcBarons[1] = new LandBaron("The Public", !BIDDABLE,!TRAVERSABLE,0);
+		npcBarons[2] = new LandBaron("The Uninformed Faction", BIDDABLE,TRAVERSABLE,0);
+		npcBarons[3] = new LandBaron("The Origin", !BIDDABLE, TRAVERSABLE, 0);
+	}
+
+	private void initializePlayers() {
+		String[] names = {"PlayerOne", "PlayerTwo"};
+		players = new LandBaron[names.length];
+		turn = new LinkedList<LandBaron>();
+
+		for(int i = 0; i < names.length; i++) 
+			players[i] = new LandBaron(names[i],BIDDABLE,TRAVERSABLE, calculateBudget());
+
+		for(int i = 0; i < players.length;i++)
+			turn.add(players[i]);		
+	}
+
 	private void initializeBoard() {
+		board = new LandNode[size][size];
 		constructBoard();
 		addSpecialNodes();
 		connectBoard();
 	}
 
+	private int calculateBudget() {
+		return (size-2)*(size-2)*2;
+	}
+
 	private void constructBoard() {
 		for(int row = 1; row < board.length-1; row++) {
 			for(int col = 1; col < board[row].length-1;col++) {
-				board[row][col] = new LandNode();
+				board[row][col] = new LandNode(npcBarons[UNAWARE_LAND_OWNER]);
 			}
 		}
-		board[1][1].setOwnership(SOURCE_OR_DESTINATION);
-		board[size-2][size-2].setOwnership(SOURCE_OR_DESTINATION);
+		board[1][1].setOwnership(npcBarons[ORIGIN]);
+		board[size-2][size-2].setOwnership(npcBarons[ORIGIN]);
 
 	}
 
@@ -160,9 +212,21 @@ public class LandBaronsModel {
 	}
 
 	private void gameFinished() {
+		resetForDijkstra();
+		dijkstra();
+
+		LandNode previous = board[size-2][size-2];
+		while(previous != null) {
+			previous.getOwnership().increaseProfit(previous.getBid()*10);
+			previous = previous.getPrevious();
+		}
+
+
 		//TODO: for each node in path, sum player one and player 2
 		//TODO: Add unspent budgets to their players sums*10
 		//TODO: Inform listeners that the game is done and disallow further moves game moves
+
+		boolean gameFinished = true;
 	}
 
 
@@ -183,10 +247,10 @@ public class LandBaronsModel {
 				if(isValidTileLocation(row, col)) 
 					if(noCollision(row,col)) 
 						if(yolo.nextInt(2) == 0) {
-							board[row][col].setOwnership(PUBLIC_LAND);
+							board[row][col].setOwnership(npcBarons[THE_PUBLIC]);
 							failedToAddTile = false;
 						}else {
-							board[row][col].setOwnership(COMPANY);
+							board[row][col].setOwnership(npcBarons[THE_COMPANY]);
 							failedToAddTile = false;
 						}
 
@@ -211,10 +275,7 @@ public class LandBaronsModel {
 	}
 
 	private boolean noCollision(int row, int col) {
-		if(board[row][col].getOwnership() < 0)
-			return false;
-		else
-			return true;
+		return board[row][col].getOwnership().equals(npcBarons[UNAWARE_LAND_OWNER]);
 	}
 
 	private void testWinnability() {
@@ -222,53 +283,45 @@ public class LandBaronsModel {
 		//TODO: Change winnable accordingly
 	}
 
-	private void cheapestPath(){
+	private void dijkstra(){
 
 		//TODO: Write Djikstras
 
 	}
 
 	private boolean isBiddableTile(int row, int col) {
-		return board[row][col].getOwnership() >-1;
+		return board[row][col].getOwnership().isBiddable();
 	}
 
-	private boolean isAffordableBid(int player, int row, int col) {
-		int currentOwner = board[row][col].getOwnership();
-		//If a player already owns a tile, they need only add one dollar to
-		//raise a bid.
-		if(currentOwner == player+1)
-			return playerBudgets[player] > 0;
-		return playerBudgets[player] > board[row][col].getBid();
+	private boolean isAffordableBid(LandBaron player, int row, int col) {
+		if(board[row][col].getOwnership().equals(player)) {
+			return player.getBudget() > 0;
+		}else {
+			return player.getBudget() > board[row][col].getBid();
+		}
 	}
 
-	private void fireInvalidMoveDueToUnbiddableTileEvent(int player, int row, int col) {
+	private void fireInvalidMoveDueToUnbiddableTileEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
-		String landOwner = "";
-		if(board[row][col].getOwnership() == -3) 
-			landOwner = "Company";		
-		else if(board[row][col].getOwnership() == -2) 
-			landOwner = "Public";		
-		else
-			landOwner = "Company";
-		this.pcs.firePropertyChange("I " + "U " + (player+1) + " " + outwardBoundRow
+		String landOwner = board[row][col].getOwnership().getName();
+		this.pcs.firePropertyChange("I " + "U " + player.getName() + " " + outwardBoundRow
 				+ " " + outwardBoundColumn + " " + landOwner,false, true);
 	}
 
-	private void fireInvalidMoveDueToMoneyEvent(int player, int row, int col) {
+	private void fireInvalidMoveDueToMoneyEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
-		this.pcs.firePropertyChange("I " + "$ " + (player+1) + " " + outwardBoundRow 
-				+ " " + outwardBoundColumn, playerBudgets[player], 
-				board[row][col].getBid());
-				
+		this.pcs.firePropertyChange("I " + "$ " + player.getName() + " " + outwardBoundRow 
+				+ " " + outwardBoundColumn, player.getBudget(), board[row][col].getBid());
+
 	}
 
-	private void fireValidMove(int player, int row, int col, int oldValue) {
+	private void fireValidMove(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
-		this.pcs.firePropertyChange("V " + "# " + (player+1) + " " + outwardBoundRow 
-				+ " " + outwardBoundColumn,	oldValue, true);
+		this.pcs.firePropertyChange("V " + "# " + player.getName() + " " + outwardBoundRow 
+				+ " " + outwardBoundColumn,	false, true);
 	}
 
 
@@ -277,11 +330,9 @@ public class LandBaronsModel {
 		String s = "";
 		if(gameFinished) {
 			s += "The game has ended!\n";
+
 		}else {
-			if(playersTurn == 0)
-				s+= "It is Player 1's turn!\n";
-			else
-				s+= "It is Player 2's turn!\n";
+			s+= "It is " + turn.peek().getName() +"'s turn";
 			s+= "Player 1 has " + playerBudgets[PLAYER_ONE] + "$ left to bid\n";
 			s+= "Player 2 has " + playerBudgets[PLAYER_TWO] + "$ left to bid\n";
 		}
@@ -314,12 +365,13 @@ public class LandBaronsModel {
 		this.pcs.removePropertyChangeListener(listener);
 	}
 
-	private static final int SOURCE_OR_DESTINATION = -3;
-	private static final int PUBLIC_LAND = -2;
-	private static final int COMPANY = -1;
-	private static final int UNOWNED = 0;
-	private static final int PLAYER_ONE_OWNED = 1;
-	private static final int PLAYER_TWO_OWNED = 2;
+	private static final boolean TRAVERSABLE = true;
+	private static final boolean BIDDABLE = true;
+
+	private static final int THE_COMPANY = 0;
+	private static final int THE_PUBLIC = 1;
+	private static final int UNAWARE_LAND_OWNER = 2;
+	private static final int ORIGIN = 3;
 
 	private static final int PLAYER_ONE = 0;
 	private static final int PLAYER_TWO = 1;
