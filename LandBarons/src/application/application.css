@@ -26,14 +26,30 @@
 #id4{
 	-fx-background-color: #65CC3F;
 }
-/*PlayerOne */
+/*PlayerTwo */
 #id6{
 	-fx-background-color:#3553C2;
 	-fx-fill:#3553C2;
 }
-/*PlayerTwo */
+/*PlayerOne */
 #id5{
 	-fx-background-color:#C24D35;
 	-fx-fill:#C24D35;
+}
+
+#pathid5{
+	-fx-background-color:red;
+}
+
+#pathid6{
+	-fx-background-color:blue;
+}
+
+#pathid0{
+	-fx-background-color:Yellow;
+}
+
+#pathid2{
+	-fx-background-color:gray;	
 }
 

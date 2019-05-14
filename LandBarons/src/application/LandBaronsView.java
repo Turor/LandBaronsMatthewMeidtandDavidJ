@@ -199,6 +199,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 				//TODO: Alert the user that the game is finished, thus a pass isn't allowed
 			}else {
 				feedback.setText(model.toString());
+				displayPath();
 				playGameOver();
 			}
 		}else { //Game is still in progress
@@ -215,7 +216,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 					updateGameState();
 					playPassSound();
 				}
-			}else { 
+			}else { //Action was invalid
 				if(isErrorUnbiddable(errorType)) {
 					//TODO: Inform the user that their bid failed because the tile was unbiddable
 					lastMove.setText(player + " attempted to bid on " + row + ", " + col+ ". This "
@@ -231,6 +232,10 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 				}
 			}
 		}
+	}
+	
+	private void displayPath() {
+		
 	}
 	
 	private void playErrorSound() {

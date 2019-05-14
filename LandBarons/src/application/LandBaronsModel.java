@@ -399,7 +399,7 @@ public class LandBaronsModel {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
 		this.pcs.firePropertyChange("I I M $ " + player.getName() + " " + outwardBoundRow 
-				+ " " + outwardBoundColumn, player.getBudget(), board[row][col].getBid());
+				+ " " + outwardBoundColumn, player.getBudget(), board[row][col].getBid()+1);
 
 	}
 
@@ -531,6 +531,8 @@ public class LandBaronsModel {
 		}
 		return s;
 	}
+	
+	
 
 	public String printShortestPath() {
 		String s = "";
