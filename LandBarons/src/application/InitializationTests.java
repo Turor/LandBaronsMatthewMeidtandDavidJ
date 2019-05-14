@@ -30,6 +30,7 @@ public class InitializationTests implements PropertyChangeListener {
 		System.out.println(temp);
 		temp.reset();
 		System.out.println(temp.printBoard());
+		temp.changeSize(5);
 
 	}
 

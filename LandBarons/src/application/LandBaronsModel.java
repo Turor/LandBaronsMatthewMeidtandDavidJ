@@ -37,17 +37,32 @@ public class LandBaronsModel {
 
 
 	public LandBaronsModel(int size) {
-		initializeModel(size+2);
+		pcs = new PropertyChangeSupport(this);
+		initializeModel(size);
+	}
+
+	public String getTurnID() {
+		return getStylePreference(turn.peek());
 	}
 
 	public void changeSize(int size) {
-		//TODO: Maybe warn players of their actions?	
-		initializeModel(size+2);
+		//TODO: Maybe warn players of their actions?
+
+		initializeModel(size);
+		this.alertListenersBoardSizeWasChanged();
 	}
 
 	public int getBid(int row, int col) {
 		row++; col++; //No one knows we added a padding row and column
 		return board[row][col].getBid();
+	}
+
+	public String getInfo(int row, int col) {
+		row++;col++;
+		if(board[row][col].getOwnership().isBiddable())
+			return ""+board[row][col].getBid();
+		else
+			return board[row][col].getOwnership().toString();
 	}
 
 	public void move(int row, int col) {
@@ -78,7 +93,9 @@ public class LandBaronsModel {
 		player.decreaseBudget(board[row][col].getBid());
 
 		advanceTurn();
-		passedLastTurn = false; 
+		passedLastTurn = false;
+		if(turn.peek().getBudget() == 0)
+			pass();
 		this.fireValidMove(player, row, col);
 	}
 
@@ -88,14 +105,16 @@ public class LandBaronsModel {
 
 	public void pass() {
 		if(!gameFinished) {
-			this.fireValidPass(turn.peek());
+
 			if(passedLastTurn) {
 				gameFinished();
 				advanceTurn();
 			}else {
 				passedLastTurn = true;
 				advanceTurn();
+				this.fireValidPass(turn.peek());
 			}
+
 		}else {
 			this.fireInvalidPassDueToGameBeingFinished(turn.peek());
 		}
@@ -138,8 +157,8 @@ public class LandBaronsModel {
 	}
 
 	private void initializeModel(int size) {
-		pcs = new PropertyChangeSupport(this);
-		this.size = size;
+
+		this.size = size+2;
 		winnable = false;
 
 		initializeLandBarons();
@@ -217,7 +236,6 @@ public class LandBaronsModel {
 		LandNode previous = board[size-2][size-2];
 		while(previous != null) {
 			previous.getOwnership().increaseProfit(previous.getBid()*10);
-			System.out.println(playerStatus(previous.getOwnership()));
 			previous = previous.getPrevious();
 		}
 
@@ -234,25 +252,29 @@ public class LandBaronsModel {
 			if(standings[i+1].getProfit() == standings[i].getProfit())
 				standings[i+1].setRank(standings[i].getRank());
 			else
-				standings[i+1].setRank(i+1);
+				standings[i+1].setRank(i+2);
 
-		if(playersTiedForFirst(standings[0],standings[1])) 
+		if(playersTied(standings[0],standings[1])) {
 			if(playerAvoidedTakingALoss(standings[0])) { //A tie
 				standings[0].setAsVictor();
 				standings[1].setAsVictor();
 			}//Both players lost as neither made a profit
 			else if(playerAvoidedTakingALoss(standings[0])) //Someone won
 				standings[0].setAsVictor();
+		}else {
+			if(playerAvoidedTakingALoss(standings[0]))
+				standings[0].setAsVictor();
+		}
 
-		alertListenersGameIsFinished();
 		gameFinished = true;
+		alertListenersGameIsFinished();
 	}
 
 	private boolean playerAvoidedTakingALoss(LandBaron player) {
 		return player.getProfit() >= 0;
 	}
 
-	private boolean playersTiedForFirst(LandBaron firstPlayer, LandBaron secondPlayer) {
+	private boolean playersTied(LandBaron firstPlayer, LandBaron secondPlayer) {
 		return firstPlayer.getRank() == secondPlayer.getRank();
 	}
 
@@ -412,7 +434,7 @@ public class LandBaronsModel {
 	}
 
 	private void alertListenersBoardSizeWasChanged() {
-		this.pcs.firePropertyChange("- - S -", false, true);
+		this.pcs.firePropertyChange("- - S - -", false, true);
 	}
 
 
@@ -434,9 +456,31 @@ public class LandBaronsModel {
 				s+= playerStatus(standings[rank]);
 			}
 		}else {
-			s+= "It is " + turn.peek().getName() +"'s turn";
+			s+= "It is " + turn.peek().getName() +"'s turn.\n";
 			for(LandBaron player : players)
 				s+= playerStatus(player);
+		}
+		return s;
+	}
+
+	public String getTileStyle(int row, int col) {
+		row++; col++;
+		return getStylePreference(board[row][col].getOwnership());
+	}
+
+	private String getStylePreference(LandBaron entity) {
+		String s = "id";
+		LandBaron[] owners = new LandBaron[npcBarons.length + players.length];
+		for(int i = 0; i < owners.length; i++) {
+			if(i < npcBarons.length)
+				owners[i] = npcBarons[i];
+			else
+				owners[i] = players[i-npcBarons.length];
+		}
+
+		for(int i = 0; i < owners.length; i++) {
+			if(entity.equals(owners[i]))
+				return s+i;
 		}
 		return s;
 	}

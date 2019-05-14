@@ -132,7 +132,7 @@ public class LandNode implements Comparable<LandNode> {
 	public String toString() {
 		String s = "";
 		//s += ownership + "," + bid;
-		s += priority + ", " + ownership;
+		s += ownership;
 		return s;
 	}
 

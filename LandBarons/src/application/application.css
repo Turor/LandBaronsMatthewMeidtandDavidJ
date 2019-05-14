@@ -1,1 +1,39 @@
 /* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
+
+.label{
+	-fx-font-size:16px;
+}
+.button{
+}
+
+/*Company */
+#id0{
+	-fx-background-color: #FFBA38; 
+}
+/*Public/Impassble Land */
+#id1{
+	-fx-background-color: #8389BB;
+}
+/*Unowned Land */
+#id2{
+	-fx-background-color:#BFBFAC;
+}
+/*Origin */
+#id3{
+	-fx-background-color: #65CC3F;
+}
+/*Destination */
+#id4{
+	-fx-background-color: #65CC3F;
+}
+/*PlayerOne */
+#id6{
+	-fx-background-color:#3553C2;
+	-fx-fill:#3553C2;
+}
+/*PlayerTwo */
+#id5{
+	-fx-background-color:#C24D35;
+	-fx-fill:#C24D35;
+}
+
