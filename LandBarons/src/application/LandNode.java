@@ -1,5 +1,6 @@
 package application;
 
+import java.util.ArrayList;
 
 public class LandNode implements Comparable<LandNode> {
 
@@ -15,8 +16,6 @@ public class LandNode implements Comparable<LandNode> {
 
 	private int bid;
 
-	private int maximumConnections;
-
 	private int priority;
 
 	public final static boolean FAILURE = false;
@@ -25,28 +24,17 @@ public class LandNode implements Comparable<LandNode> {
 	
 	private LandBaron initialOwner;
 
-
-
 	private LandNode prev;
 
-
-	/**
-	 * 0:	Refers to the node above the current node
-	 * 1: 	Refers to the node to the right of the current node
-	 * 2:	Refers to the node below the current node
-	 * 3: 	Refers to the node to the left of the current node
-	 */
-	private LandNode[] connections;
-
-	/**Cheaper reset*/
-	private LandNode[] disconnectedNodes;
+	private ArrayList<LandNode> connections;
+	
+	private boolean finished;
 
 	public LandNode(LandBaron owner) {
 		initialOwner = owner;
 		ownership = owner;
-		maximumConnections = 4;
-		connections = new LandNode[maximumConnections];
-		disconnectedNodes = new LandNode[maximumConnections];
+		finished = false;
+		connections = new ArrayList<LandNode>();
 		bid = 0;
 		priority = 0;
 		prev = null;
@@ -57,11 +45,18 @@ public class LandNode implements Comparable<LandNode> {
 	}
 
 	public void connectNodes(LandNode neighbor, int direction) {
-		connections[direction] = neighbor;
+		connections.add(neighbor);
 	}
 
 	public int getBid() {
 		return bid;
+	}
+	
+	public boolean isFinished() {
+		return finished;
+	}
+	public void finish() {
+		finished = true;
 	}
 
 	public int makeBid(LandBaron owner) {	
@@ -72,11 +67,7 @@ public class LandNode implements Comparable<LandNode> {
 	}
 
 	public int getConnectionCount() {
-		int connectionCount = 0;
-		for(int i = 0; i < connections.length; i++)
-			if(connections[i] != null)
-				connectionCount++;
-		return connectionCount;
+		return connections.size();
 	}
 
 	/**
@@ -85,15 +76,7 @@ public class LandNode implements Comparable<LandNode> {
 	 * @return
 	 */
 	public LandNode connection(int desired) {
-		int encounters = 0;
-		for(int i = 0; i < connections.length ; i++ ) {
-			if(connections[i] != null) {	
-				if(encounters == desired)
-					return connections[i];
-				encounters++;
-			}
-		}
-		return null;
+		return connections.get(desired);
 	}
 
 	/**
@@ -101,6 +84,7 @@ public class LandNode implements Comparable<LandNode> {
 	 */
 	public void resetForDijkstra() {
 		prev = null;
+		finished = false;
 		priority = bid;
 	}
 
@@ -127,31 +111,11 @@ public class LandNode implements Comparable<LandNode> {
 	public void setPrevious(LandNode newPrev) {
 		prev = newPrev;
 	}
-
-	public void disableMe(LandNode other) {
-		for(int i = 0; i < connections.length;i++) {
-			if(other.equals(connections[i])) {
-				disconnectedNodes[i] = connections[i];
-				connections[i] = null;
-			}
-		}
-	}
-
+	
 	public void reset() {
-		resetConnections();
+		resetForDijkstra();
 		bid = 0;
 		ownership = initialOwner;
-		priority = 0;
-		prev = null;
-	}
-
-	private void resetConnections() {
-		for(int i = 0; i < disconnectedNodes.length;i++) {
-			if(disconnectedNodes[i] != null) {
-				connections[i] = disconnectedNodes[i];
-				disconnectedNodes[i] = null;
-			}
-		}
 	}
 
 	@Override

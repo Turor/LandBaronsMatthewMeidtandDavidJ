@@ -2,7 +2,10 @@ package application;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.Random;
 
 public class LandBaronsModel {
@@ -18,13 +21,13 @@ public class LandBaronsModel {
 
 	private LandBaron[] players;
 
+	private LandBaron[] standings;
+
 	private LinkedList<LandBaron> turn;
 
 	private boolean winnable;
 
 	private LandNode[][] board;
-
-	private int[] playerBudgets;
 
 	private boolean passedLastTurn;
 
@@ -50,15 +53,19 @@ public class LandBaronsModel {
 	public void move(int row, int col) {
 		//TODO: Add move to the move stack to facilitate undos?
 		row++; col++; //No one else knows we added a padding row and column
-		if(isBiddableTile(row, col))
-			if(isAffordableBid(turn.peek(),row,col)) {
-				executeMove(turn.peek(),row,col);
-			}else {
-				fireInvalidMoveDueToMoneyEvent(turn.peek(),row,col);
-			}
+		if(!gameFinished)
+			if(isBiddableTile(row, col))
+				if(isAffordableBid(turn.peek(),row,col)) {
+					executeMove(turn.peek(),row,col);
+				}else {
+					fireInvalidMoveDueToMoneyEvent(turn.peek(),row,col);
+				}
 
+			else {
+				this.fireInvalidMoveDueToUnbiddableTileEvent(turn.peek(), row, col);		
+			}
 		else {
-			this.fireInvalidMoveDueToUnbiddableTileEvent(turn.peek(), row, col);		
+			this.fireInvalidMoveDueToGameBeingFinished(turn.peek(),row,col);
 		}
 	}
 
@@ -80,11 +87,17 @@ public class LandBaronsModel {
 	}
 
 	public void pass() {
-		if(passedLastTurn)
-			gameFinished();
-		else {
-			passedLastTurn = true;
-			advanceTurn();
+		if(!gameFinished) {
+			this.fireValidPass(turn.peek());
+			if(passedLastTurn) {
+				gameFinished();
+				advanceTurn();
+			}else {
+				passedLastTurn = true;
+				advanceTurn();
+			}
+		}else {
+			this.fireInvalidPassDueToGameBeingFinished(turn.peek());
 		}
 	}
 
@@ -101,12 +114,10 @@ public class LandBaronsModel {
 		winnable = false;
 		passedLastTurn = false;
 		gameFinished = false;
+		LandBaron playerWhoReset = turn.peek();
 		resetPlayers();
-		resetNodes();
-		
 		addSpecialNodes();
-
-
+		this.alertListenersGameWasReset(playerWhoReset);
 
 	}
 
@@ -129,14 +140,11 @@ public class LandBaronsModel {
 	private void initializeModel(int size) {
 		pcs = new PropertyChangeSupport(this);
 		this.size = size;
-
-		//Initialize the players names and their corresponding identities
+		winnable = false;
 
 		initializeLandBarons();
-
 		initializeBoard();
-		initBudget();
-		winnable = false;	
+
 		passedLastTurn = false;
 		gameFinished = false;
 	}
@@ -147,11 +155,12 @@ public class LandBaronsModel {
 	}
 
 	private void initializeNPCS() {
-		npcBarons = new LandBaron[4];
+		npcBarons = new LandBaron[5];
 		npcBarons[0] = new LandBaron("The Company", !BIDDABLE,TRAVERSABLE, 0);
 		npcBarons[1] = new LandBaron("The Public", !BIDDABLE,!TRAVERSABLE,0);
 		npcBarons[2] = new LandBaron("The Uninformed Faction", BIDDABLE,TRAVERSABLE,0);
 		npcBarons[3] = new LandBaron("The Origin", !BIDDABLE, TRAVERSABLE, 0);
+		npcBarons[4] = new LandBaron("The Destination", !BIDDABLE, TRAVERSABLE,0);
 	}
 
 	private void initializePlayers() {
@@ -167,10 +176,11 @@ public class LandBaronsModel {
 	}
 
 	private void initializeBoard() {
+
 		board = new LandNode[size][size];
 		constructBoard();
+		makeDefaultConnections();
 		addSpecialNodes();
-		connectBoard();
 	}
 
 	private int calculateBudget() {
@@ -183,12 +193,9 @@ public class LandBaronsModel {
 				board[row][col] = new LandNode(npcBarons[UNAWARE_LAND_OWNER]);
 			}
 		}
-		board[1][1].setOwnership(npcBarons[ORIGIN]);
-		board[size-2][size-2].setOwnership(npcBarons[ORIGIN]);
-
 	}
 
-	private void connectBoard() {
+	private void makeDefaultConnections() {
 		for(int row = 1; row < board.length -1; row++) {
 			for(int col = 1; col < board[row].length-1;col++) {
 				if(null != board[row-1][col] ) {
@@ -204,28 +211,49 @@ public class LandBaronsModel {
 		}
 	}
 
-	private void initBudget() {
-		playerBudgets = new int[2];
-		playerBudgets[PLAYER_ONE] = (size-2)*(size-2)*2;
-		playerBudgets[PLAYER_TWO] = playerBudgets[PLAYER_ONE];
-	}
-
 	private void gameFinished() {
-		resetForDijkstra();
 		dijkstra();
 
 		LandNode previous = board[size-2][size-2];
 		while(previous != null) {
 			previous.getOwnership().increaseProfit(previous.getBid()*10);
+			System.out.println(playerStatus(previous.getOwnership()));
 			previous = previous.getPrevious();
 		}
 
+		standings = new LandBaron[players.length];
+		for(int player = 0; player < players.length; player++) {
+			players[player].decreaseProfit(calculateBudget() - players[player].getBudget());
+			standings[player] = players[player];
+		}
+		Arrays.sort(standings);
 
-		//TODO: for each node in path, sum player one and player 2
-		//TODO: Add unspent budgets to their players sums*10
-		//TODO: Inform listeners that the game is done and disallow further moves game moves
+		//This calculation determines what the players ranks were
+		standings[0].setRank(1);
+		for(int i = 0; i < standings.length-1; i++) 
+			if(standings[i+1].getProfit() == standings[i].getProfit())
+				standings[i+1].setRank(standings[i].getRank());
+			else
+				standings[i+1].setRank(i+1);
 
-		boolean gameFinished = true;
+		if(playersTiedForFirst(standings[0],standings[1])) 
+			if(playerAvoidedTakingALoss(standings[0])) { //A tie
+				standings[0].setAsVictor();
+				standings[1].setAsVictor();
+			}//Both players lost as neither made a profit
+			else if(playerAvoidedTakingALoss(standings[0])) //Someone won
+				standings[0].setAsVictor();
+
+		alertListenersGameIsFinished();
+		gameFinished = true;
+	}
+
+	private boolean playerAvoidedTakingALoss(LandBaron player) {
+		return player.getProfit() >= 0;
+	}
+
+	private boolean playersTiedForFirst(LandBaron firstPlayer, LandBaron secondPlayer) {
+		return firstPlayer.getRank() == secondPlayer.getRank();
 	}
 
 
@@ -233,27 +261,34 @@ public class LandBaronsModel {
 		for(int row = 1; row < board.length-1;row++)
 			for(int col = 1; col < board[row].length-1;col++)
 				board[row][col].reset();
+		board[1][1].setOwnership(npcBarons[ORIGIN]);
+		board[size-2][size-2].setOwnership(npcBarons[DESTINATION]);
 	}
 
-	//1 through size - 2
-	private void addSpecialNodes() {
-		Random yolo = new Random();
-		for(int neededSpecialTiles = 0; neededSpecialTiles < size-2;neededSpecialTiles++) {
-			boolean failedToAddTile = true;
-			while(failedToAddTile) {
-				int row = yolo.nextInt(size-2) + 1;
-				int col = yolo.nextInt(size-2) + 1;
-				if(isValidTileLocation(row, col)) 
-					if(noCollision(row,col)) 
-						if(yolo.nextInt(2) == 0) {
-							board[row][col].setOwnership(npcBarons[THE_PUBLIC]);
-							failedToAddTile = false;
-						}else {
-							board[row][col].setOwnership(npcBarons[THE_COMPANY]);
-							failedToAddTile = false;
-						}
 
+	private void addSpecialNodes() {
+
+		while(!winnable) {
+			resetNodes();
+			Random yolo = new Random();
+			for(int neededSpecialTiles = 0; neededSpecialTiles < size-2;neededSpecialTiles++) {
+				boolean failedToAddTile = true;
+				while(failedToAddTile) {
+					int row = yolo.nextInt(size-2) + 1;
+					int col = yolo.nextInt(size-2) + 1;
+					if(isValidTileLocation(row, col)) 
+						if(noCollision(row,col)) 
+							if(yolo.nextInt(2) == 0) {
+								board[row][col].setOwnership(npcBarons[THE_PUBLIC]);
+								failedToAddTile = false;
+							}else {
+								board[row][col].setOwnership(npcBarons[THE_COMPANY]);
+								failedToAddTile = false;
+							}
+
+				}
 			}
+			testWinnability();
 		}
 	}
 
@@ -278,14 +313,43 @@ public class LandBaronsModel {
 	}
 
 	private void testWinnability() {
-		//TODO: Use cheapestPaths result to determine that a path exists
-		//TODO: Change winnable accordingly
+		dijkstra();
+
+		//Evaluates whether or not a path exists to the destination from the source
+		winnable = board[size-2][size-2].getPrevious() != null;
 	}
 
 	private void dijkstra(){
-
 		//TODO: Write Djikstras
+		resetForDijkstra();
+		PriorityQueue<LandNode> pq = new PriorityQueue<LandNode>();
+		pq.add(board[1][1]);
+		while(!pq.isEmpty()) {
+			LandNode nodeBeingProcessed = pq.poll();
+			for(int connection = 0; connection < nodeBeingProcessed.getConnectionCount();
+					connection++) {
+				LandNode connectedNode = nodeBeingProcessed.connection(connection);
+				if(!connectedNode.isFinished())
+					if(connectedNode.getOwnership().isTraversible()) //Can a connection be entered?
+						if(null != connectedNode.getPrevious()) { //Has this node been reached previously?
+							if(connectedNode.getPriority() > nodeBeingProcessed.getPriority() 
+									+ connectedNode.getBid()) { //Is this a cheaper path?
+								pq.remove(connectedNode);
+								updatePreviousNode(pq, nodeBeingProcessed, connectedNode);
+							}		
+						}else { //No node has connected to this node yet
+							updatePreviousNode(pq, nodeBeingProcessed, connectedNode);
+						}
+			}
+			nodeBeingProcessed.finish();
+		}
+	}
 
+	/**Updates the cheapest path and adds node to queue to be processed*/
+	private void updatePreviousNode(PriorityQueue<LandNode> pq, LandNode processingNode, LandNode connectedNode) {
+		connectedNode.setPriority(processingNode.getPriority() + connectedNode.getBid());
+		connectedNode.setPrevious(processingNode);
+		pq.add(connectedNode);
 	}
 
 	private boolean isBiddableTile(int row, int col) {
@@ -300,18 +364,19 @@ public class LandBaronsModel {
 		}
 	}
 
+
 	private void fireInvalidMoveDueToUnbiddableTileEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
 		String landOwner = board[row][col].getOwnership().getName();
-		this.pcs.firePropertyChange("I " + "U " + player.getName() + " " + outwardBoundRow
+		this.pcs.firePropertyChange("I I M U " + player.getName() + " " + outwardBoundRow
 				+ " " + outwardBoundColumn + " " + landOwner,false, true);
 	}
 
 	private void fireInvalidMoveDueToMoneyEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
-		this.pcs.firePropertyChange("I " + "$ " + player.getName() + " " + outwardBoundRow 
+		this.pcs.firePropertyChange("I I M $ " + player.getName() + " " + outwardBoundRow 
 				+ " " + outwardBoundColumn, player.getBudget(), board[row][col].getBid());
 
 	}
@@ -319,22 +384,89 @@ public class LandBaronsModel {
 	private void fireValidMove(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
-		this.pcs.firePropertyChange("V " + "# " + player.getName() + " " + outwardBoundRow 
+		this.pcs.firePropertyChange("I V M - " + player.getName() + " " + outwardBoundRow 
 				+ " " + outwardBoundColumn,	false, true);
 	}
 
+	private void fireValidPass(LandBaron player) {
+		this.pcs.firePropertyChange("I V P - " + player.getName(), false, true);
+	}
+
+	private void fireInvalidPassDueToGameBeingFinished(LandBaron player) {
+		this.pcs.firePropertyChange("F I P F " + player.getName(),false,true);
+	}
+
+	private void fireInvalidMoveDueToGameBeingFinished(LandBaron player, int row, int col) {
+		int outwardBoundRow = row -1;
+		int outwardBoundColumn = col -1;
+		this.pcs.firePropertyChange("F I M F " + player.getName() + " " + outwardBoundRow 
+				+ " " + outwardBoundColumn , false,true);
+	}
+
+	private void alertListenersGameWasReset(LandBaron player) {
+		this.pcs.firePropertyChange("- - R - " + player.getName(),false, true);
+	}
+
+	private void alertListenersGameIsFinished() {
+		this.pcs.firePropertyChange("F - - - -",false,true);
+	}
+
+	private void alertListenersBoardSizeWasChanged() {
+		this.pcs.firePropertyChange("- - S -", false, true);
+	}
 
 
 	public String toString() {
 		String s = "";
 		if(gameFinished) {
-			s += "The game has ended!\n";
-
+			s += "The game has ended ";
+			if(standings[0].isVictor()) 
+				if(standings[1].isVictor()) 
+					s+= "in a tie!\n";
+				else 
+					s+= " with " + standings[0].getName() + " winning!\n";
+			else 
+				s+= " in a total loss!\n";
+			for(int rank = 0; rank < standings.length; rank++) {
+				if(tiedWithSomeone(rank))
+					s+= "T";
+				s+= standings[rank].getRank() + ": ";
+				s+= playerStatus(standings[rank]);
+			}
 		}else {
 			s+= "It is " + turn.peek().getName() +"'s turn";
-			s+= "Player 1 has " + playerBudgets[PLAYER_ONE] + "$ left to bid\n";
-			s+= "Player 2 has " + playerBudgets[PLAYER_TWO] + "$ left to bid\n";
+			for(LandBaron player : players)
+				s+= playerStatus(player);
 		}
+		return s;
+	}
+
+	private boolean tiedWithSomeone(int index) {
+		if(index-1 >=0) {
+			if(standings[index].getRank() == standings[index-1].getRank())
+				return true;
+		}else if(index +1 < standings.length) {
+			if(standings[index].getRank() == standings[index+1].getRank())
+				return true;
+		}
+		return false;
+	}
+
+	private String playerStatus(LandBaron player) {
+		String s = player.getName() + " has ";
+		if(gameFinished) {
+			s+= "ended the game with ";
+			if(player.getProfit() < 0)
+				s+= "a loss of " + player.getProfit() +"$!";
+			else if(player.getProfit() == 0)
+				s+= "neither a profit nor a loss.";
+			else
+				s+= "a profit of " + player.getProfit() +"$!";
+
+		}else {
+			s+= player.getBudget() + "$ left to bid";		
+		}
+		s+="\n";
 		return s;
 	}
 
@@ -356,6 +488,23 @@ public class LandBaronsModel {
 		return s;
 	}
 
+	public String printShortestPath() {
+		String s = "";
+
+		LandNode previous = board[size-2][size-2];
+		int counter = 0;
+		while(null != previous) {
+
+			s+= previous.getOwnership().getName() + " -> ";
+			previous = previous.getPrevious();
+			counter++;
+			if(counter%5 == 0)
+				s+= "\n";
+		}
+
+		return s;
+	}
+
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
 		this.pcs.addPropertyChangeListener(listener);
 	}
@@ -371,9 +520,7 @@ public class LandBaronsModel {
 	private static final int THE_PUBLIC = 1;
 	private static final int UNAWARE_LAND_OWNER = 2;
 	private static final int ORIGIN = 3;
-
-	private static final int PLAYER_ONE = 0;
-	private static final int PLAYER_TWO = 1;
+	private static final int DESTINATION = 4;
 
 	private static final int ABOVE = 0;
 	private static final int RIGHT_OF = 1;
