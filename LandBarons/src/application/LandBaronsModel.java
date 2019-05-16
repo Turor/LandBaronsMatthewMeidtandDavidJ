@@ -62,7 +62,7 @@ public class LandBaronsModel {
 		if(board[row][col].isBiddable())
 			return ""+board[row][col].getBid();
 		else
-			return board[row][col].getOwnership().toString();
+			return board[row][col].toString();
 	}
 
 	public void move(int row, int col) {
@@ -86,12 +86,7 @@ public class LandBaronsModel {
 
 	private void executeMove(LandBaron player, int row,int col) {
 
-		//The previous owner receives a refund
-		board[row][col].getOwnership().increaseBudget(board[row][col].getBid());
-
 		board[row][col].makeBid(player);
-		player.decreaseBudget(board[row][col].getBid());
-
 		advanceTurn();
 		passedLastTurn = false;
 		if(turn.peek().getBudget() == 0)
@@ -122,7 +117,7 @@ public class LandBaronsModel {
 
 	public String getOwner(int row, int col) {
 		row++; col++;
-		return board[row][col].getOwnership().toString();
+		return board[row][col].toString();
 	}
 
 	private void advanceTurn() {
@@ -235,7 +230,7 @@ public class LandBaronsModel {
 
 		LandNode previous = board[size-2][size-2];
 		while(previous != null) {
-			previous.getOwnership().increaseProfit(previous.getBid()*10);
+			previous.increaseProfit(previous.getBid()*10);
 			previous = previous.getPrevious();
 		}
 
@@ -352,7 +347,7 @@ public class LandBaronsModel {
 					connection++) {
 				LandNode connectedNode = nodeBeingProcessed.connection(connection);
 				if(!connectedNode.isFinished())
-					if(connectedNode.getOwnership().isTraversible()) //Can a connection be entered?
+					if(connectedNode.isTraversible()) //Can a connection be entered?
 						if(null != connectedNode.getPrevious()) { //Has this node been reached previously?
 							if(connectedNode.getPriority() > nodeBeingProcessed.getPriority() 
 									+ connectedNode.getBid()) { //Is this a cheaper path?
@@ -390,7 +385,7 @@ public class LandBaronsModel {
 	private void fireInvalidMoveDueToUnbiddableTileEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
-		String landOwner = board[row][col].getOwnership().getName();
+		String landOwner = board[row][col].getName();
 		this.pcs.firePropertyChange("I I M U " + player.getName() + " " + outwardBoundRow
 				+ " " + outwardBoundColumn + " " + landOwner,false, true);
 	}

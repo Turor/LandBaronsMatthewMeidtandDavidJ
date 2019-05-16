@@ -44,8 +44,28 @@ public class LandNode implements Comparable<LandNode> {
 		return ownership;
 	}
 	
+	public void increaseBudget(int value) {
+		ownership.increaseBudget(value);
+	}
+	
+	public void decreaseBudget(int value) {
+		ownership.decreaseBudget(value);
+	}
+	
 	public boolean isBiddable() {
 		return ownership.isBiddable();
+	}
+	
+	public void increaseProfit(int value) {
+		ownership.increaseProfit(value);
+	}
+	
+	public boolean isTraversible() {
+		return ownership.isTraversible();
+	}
+	
+	public String getName() {
+		return ownership.getName();
 	}
 
 	public void connectNodes(LandNode neighbor, int direction) {
@@ -63,7 +83,14 @@ public class LandNode implements Comparable<LandNode> {
 		finished = true;
 	}
 
-	public int makeBid(LandBaron owner) {	
+	public int makeBid(LandBaron owner) {
+		if(owner.equals(ownership)) {
+			decreaseBudget(1);
+		}else {
+			increaseBudget(bid);
+			ownership = owner;
+			decreaseBudget(bid+1);
+		}
 			bid++;
 			priority = bid;
 			ownership = owner;
