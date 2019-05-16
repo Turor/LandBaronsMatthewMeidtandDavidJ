@@ -59,7 +59,7 @@ public class LandBaronsModel {
 
 	public String getInfo(int row, int col) {
 		row++;col++;
-		if(board[row][col].getOwnership().isBiddable())
+		if(board[row][col].isBiddable())
 			return ""+board[row][col].getBid();
 		else
 			return board[row][col].getOwnership().toString();
@@ -375,7 +375,7 @@ public class LandBaronsModel {
 	}
 
 	private boolean isBiddableTile(int row, int col) {
-		return board[row][col].getOwnership().isBiddable();
+		return board[row][col].isBiddable();
 	}
 
 	private boolean isAffordableBid(LandBaron player, int row, int col) {

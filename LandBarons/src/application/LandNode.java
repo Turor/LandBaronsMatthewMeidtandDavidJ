@@ -43,6 +43,10 @@ public class LandNode implements Comparable<LandNode> {
 	public LandBaron getOwnership() {
 		return ownership;
 	}
+	
+	public boolean isBiddable() {
+		return ownership.isBiddable();
+	}
 
 	public void connectNodes(LandNode neighbor, int direction) {
 		connections.add(neighbor);
