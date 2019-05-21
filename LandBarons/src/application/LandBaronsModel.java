@@ -218,7 +218,7 @@ public class LandBaronsModel {
 	private void constructBoard() {
 		for(int row = 1; row < board.length-1; row++) {
 			for(int col = 1; col < board[row].length-1;col++) {
-				board[row][col] = new LandNode(npcBarons[UNAWARE_LAND_OWNER]);
+				board[row][col] = new LandNode(npcBarons[UNAWARE_LAND_OWNER], row-1, col-1);
 			}
 		}
 	}
@@ -575,6 +575,16 @@ public class LandBaronsModel {
 		}
 
 		return s;
+	}
+	
+	public LinkedList<Coordinates> getShortestPath(){
+		LinkedList<Coordinates> path = new LinkedList<Coordinates>();
+		LandNode previous = board[size-2][size-2];
+		while(null != previous) {
+			path.add(previous.getCoordinates());
+			previous = previous.getPrevious();
+		}
+		return path;
 	}
 
 	public void addPropertyChangeListener(PropertyChangeListener listener) {

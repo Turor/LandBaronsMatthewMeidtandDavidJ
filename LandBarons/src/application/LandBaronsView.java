@@ -237,7 +237,13 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 	
 	//TODO display the end path
 	private void displayPath() {
-		
+		//We don't need a clone of the nodes because they can't be modified once initialized
+		LinkedList<Coordinates> path = model.getShortestPath();
+		for(Coordinates coordinate : path) {
+			int row = coordinate.getRow();
+			int col = coordinate.getCol();
+			buttons[row][col].setId(model.getTileStyle(row,col)+"f");
+		}
 	}
 	
 	private void playErrorSound() {

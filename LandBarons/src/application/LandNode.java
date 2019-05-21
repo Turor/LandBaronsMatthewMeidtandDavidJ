@@ -29,15 +29,22 @@ public class LandNode implements Comparable<LandNode> {
 	private ArrayList<LandNode> connections;
 	
 	private boolean finished;
+	
+	private Coordinates coordinates;
 
-	public LandNode(LandBaron owner) {
+	public LandNode(LandBaron owner, int row, int column) {
 		initialOwner = owner;
 		ownership = owner;
+		coordinates = new Coordinates(row,column);
 		finished = false;
 		connections = new ArrayList<LandNode>();
 		bid = 0;
 		priority = 0;
 		prev = null;
+	}
+	
+	public Coordinates getCoordinates() {
+		return coordinates;
 	}
 
 	public LandBaron getOwnership() {

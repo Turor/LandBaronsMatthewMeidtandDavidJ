@@ -37,19 +37,33 @@
 	-fx-fill:#C24D35;
 }
 
-#pathid5{
-	-fx-background-color:red;
+/*PlayerTwo Tile on Shortest Path*/
+#id6f{
+	-fx-background-color:#253986;
+	-fx-fill:#6D83D7;
+}
+/*PlayerOne Tile on Shortest Path*/
+#id5f{
+	-fx-background-color:#863525;
+	-fx-fill:#D77F6D;
 }
 
-#pathid6{
-	-fx-background-color:blue;
+/*Unowned Land Tile on Shortest Path*/
+#id2f{
+	-fx-background-color:#9E9E81;
 }
 
-#pathid0{
-	-fx-background-color:Yellow;
+/*Company Land Tile on Shortest Path */
+#id0f{
+	-fx-background-color: #9F6700; 
 }
 
-#pathid2{
-	-fx-background-color:gray;	
+/*Origin of a finished game*/
+#id3f{
+	-fx-background-color: #469728;
+}
+/*Destination of a finished game*/
+#id4f{
+	-fx-background-color: #469728;
 }
 
