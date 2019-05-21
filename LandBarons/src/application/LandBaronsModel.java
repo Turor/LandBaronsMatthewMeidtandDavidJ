@@ -35,28 +35,30 @@ public class LandBaronsModel {
 
 	private PropertyChangeSupport pcs;
 
-
+	//Constructor
 	public LandBaronsModel(int size) {
 		pcs = new PropertyChangeSupport(this);
 		initializeModel(size);
 	}
 
+	//A turn counter to determine which players turn it is.
 	public String getTurnID() {
 		return getStylePreference(turn.peek());
 	}
 
+	//Changes the size of the board
 	public void changeSize(int size) {
-		//TODO: Maybe warn players of their actions?
-
 		initializeModel(size);
 		this.alertListenersBoardSizeWasChanged();
 	}
-
+	
+	//Returns the bid of a land node
 	public int getBid(int row, int col) {
 		row++; col++; //No one knows we added a padding row and column
 		return board[row][col].getBid();
 	}
-
+	
+	//Returns information regarding a land node like whether it's biddable
 	public String getInfo(int row, int col) {
 		row++;col++;
 		if(board[row][col].isBiddable())
@@ -64,7 +66,8 @@ public class LandBaronsModel {
 		else
 			return board[row][col].toString();
 	}
-
+	
+	//Determines if a move is able to be made, and calls the necessary components
 	public void move(int row, int col) {
 		//TODO: Add move to the move stack to facilitate undos?
 		row++; col++; //No one else knows we added a padding row and column
@@ -84,6 +87,7 @@ public class LandBaronsModel {
 		}
 	}
 
+	//Actually makes the move
 	private void executeMove(LandBaron player, int row,int col) {
 
 		board[row][col].makeBid(player);
@@ -93,11 +97,12 @@ public class LandBaronsModel {
 			pass();
 		this.fireValidMove(player, row, col);
 	}
-
+	//Returns the size of the board
 	public int getSize() {
 		return size-2;
 	}
-
+	
+	//Passes the current players turn
 	public void pass() {
 		if(!gameFinished) {
 
@@ -114,16 +119,17 @@ public class LandBaronsModel {
 			this.fireInvalidPassDueToGameBeingFinished(turn.peek());
 		}
 	}
-
+	
+	//Returns the ownership of the land Node, player1, player2, unowned, public, or company land
 	public String getOwner(int row, int col) {
 		row++; col++;
 		return board[row][col].toString();
 	}
-
+	//Advances the turn
 	private void advanceTurn() {
 		turn.add(turn.poll());
 	}
-
+	//Resets the board
 	public void reset() {
 		winnable = false;
 		passedLastTurn = false;
@@ -132,9 +138,9 @@ public class LandBaronsModel {
 		resetPlayers();
 		addSpecialNodes();
 		this.alertListenersGameWasReset(playerWhoReset);
-
 	}
 
+	//The player's information is reset, like budget
 	private void resetPlayers() {
 		turn = new LinkedList<LandBaron>();
 		for(int player = 0; player < players.length;player++) {
@@ -142,7 +148,8 @@ public class LandBaronsModel {
 			turn.add(players[player]);
 		}
 	}
-
+	
+	//Resets the land nodes for the Dijkstra algorithm
 	private void resetForDijkstra() {
 		for(int row = 1; row < size-1; row++) {
 			for(int col = 1; col < size-1; col++) {
@@ -151,6 +158,7 @@ public class LandBaronsModel {
 		}
 	}
 
+	//Initializes the Board
 	private void initializeModel(int size) {
 
 		this.size = size+2;
@@ -163,11 +171,13 @@ public class LandBaronsModel {
 		gameFinished = false;
 	}
 
+	//Initializes both players and non players
 	private void initializeLandBarons() {	
 		initializeNPCS();
 		initializePlayers();
 	}
-
+	
+	//Sets the values for non players
 	private void initializeNPCS() {
 		npcBarons = new LandBaron[5];
 		npcBarons[0] = new LandBaron("The Company", !BIDDABLE,TRAVERSABLE, 0);
@@ -177,6 +187,7 @@ public class LandBaronsModel {
 		npcBarons[4] = new LandBaron("The Destination", !BIDDABLE, TRAVERSABLE,0);
 	}
 
+	//Initializes Player one and Player Two
 	private void initializePlayers() {
 		String[] names = {"PlayerOne", "PlayerTwo"};
 		players = new LandBaron[names.length];
@@ -189,6 +200,7 @@ public class LandBaronsModel {
 			turn.add(players[i]);		
 	}
 
+	//Initializes the Board of land Nodes
 	private void initializeBoard() {
 
 		board = new LandNode[size][size];
@@ -197,10 +209,12 @@ public class LandBaronsModel {
 		addSpecialNodes();
 	}
 
+	//Determines how much return the players get back for their owned land
 	private int calculateBudget() {
 		return (size-2)*(size-2)*2;
 	}
 
+	//Creates the grid of land nodes
 	private void constructBoard() {
 		for(int row = 1; row < board.length-1; row++) {
 			for(int col = 1; col < board[row].length-1;col++) {
@@ -209,6 +223,7 @@ public class LandBaronsModel {
 		}
 	}
 
+	//Sets all the connections of land nodes to their neighboring nodes
 	private void makeDefaultConnections() {
 		for(int row = 1; row < board.length -1; row++) {
 			for(int col = 1; col < board[row].length-1;col++) {
@@ -224,7 +239,8 @@ public class LandBaronsModel {
 			}
 		}
 	}
-
+	
+	//Called when the game is over, taking the necessary actions for the end of the game
 	private void gameFinished() {
 		dijkstra();
 
@@ -264,16 +280,18 @@ public class LandBaronsModel {
 		gameFinished = true;
 		alertListenersGameIsFinished();
 	}
-
+	
+	//For the End dialogue, if a player's net profit was greater than 0
 	private boolean playerAvoidedTakingALoss(LandBaron player) {
 		return player.getProfit() >= 0;
 	}
-
+	
+	//If both players profit was equal
 	private boolean playersTied(LandBaron firstPlayer, LandBaron secondPlayer) {
 		return firstPlayer.getRank() == secondPlayer.getRank();
 	}
 
-
+	//Resets the nodes of the board
 	private void resetNodes() {
 		for(int row = 1; row < board.length-1;row++)
 			for(int col = 1; col < board[row].length-1;col++)
@@ -282,7 +300,7 @@ public class LandBaronsModel {
 		board[size-2][size-2].setOwnership(npcBarons[DESTINATION]);
 	}
 
-
+	//Called when creating the board, it adds the "special", unbiddable land tiles
 	private void addSpecialNodes() {
 
 		while(!winnable) {
@@ -336,6 +354,7 @@ public class LandBaronsModel {
 		winnable = board[size-2][size-2].getPrevious() != null;
 	}
 
+	//Dijkstra's algorithm that moves through the shortest path and sets what it moved from previously
 	private void dijkstra(){
 		//TODO: Write Djikstras
 		resetForDijkstra();
@@ -368,11 +387,13 @@ public class LandBaronsModel {
 		connectedNode.setPrevious(processingNode);
 		pq.add(connectedNode);
 	}
-
+	
+	//Determines if a land node is biddable
 	private boolean isBiddableTile(int row, int col) {
 		return board[row][col].isBiddable();
 	}
 
+	//Determines if a player has enough budget to bid on a land tile
 	private boolean isAffordableBid(LandBaron player, int row, int col) {
 		if(board[row][col].getOwnership().equals(player)) {
 			return player.getBudget() > 0;
@@ -381,7 +402,7 @@ public class LandBaronsModel {
 		}
 	}
 
-
+	//Firing property change if the player attempts to bid on an unbiddable tile
 	private void fireInvalidMoveDueToUnbiddableTileEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
@@ -389,7 +410,7 @@ public class LandBaronsModel {
 		this.pcs.firePropertyChange("I I M U " + player.getName() + " " + outwardBoundRow
 				+ " " + outwardBoundColumn + " " + landOwner,false, true);
 	}
-
+	//Firing property change if the player is unable to make a move due to money
 	private void fireInvalidMoveDueToMoneyEvent(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
@@ -397,22 +418,25 @@ public class LandBaronsModel {
 				+ " " + outwardBoundColumn, player.getBudget(), board[row][col].getBid()+1);
 
 	}
-
+	//Firing property change if the move attempted is invalid
 	private void fireValidMove(LandBaron player, int row, int col) {
 		int outwardBoundRow = row - 1;
 		int outwardBoundColumn = col-1;
 		this.pcs.firePropertyChange("I V M - " + player.getName() + " " + outwardBoundRow 
 				+ " " + outwardBoundColumn,	false, true);
 	}
-
+	
+	//Firing property change if the player passes
 	private void fireValidPass(LandBaron player) {
 		this.pcs.firePropertyChange("I V P - " + player.getName(), false, true);
 	}
-
+	
+	//Firing property change if the player attempts to pass after the game is over
 	private void fireInvalidPassDueToGameBeingFinished(LandBaron player) {
 		this.pcs.firePropertyChange("F I P F " + player.getName(),false,true);
 	}
-
+	
+	//Firing property change if the player tries to make a move after the game is over
 	private void fireInvalidMoveDueToGameBeingFinished(LandBaron player, int row, int col) {
 		int outwardBoundRow = row -1;
 		int outwardBoundColumn = col -1;
@@ -420,19 +444,22 @@ public class LandBaronsModel {
 				+ " " + outwardBoundColumn , false,true);
 	}
 
+	//Firing property change if the board is reset
 	private void alertListenersGameWasReset(LandBaron player) {
 		this.pcs.firePropertyChange("- - R - " + player.getName(),false, true);
 	}
-
+	
+	//Firing property change is the game is over
 	private void alertListenersGameIsFinished() {
 		this.pcs.firePropertyChange("F - - - -",false,true);
 	}
 
+	//Firing property change if the size of the board was changed
 	private void alertListenersBoardSizeWasChanged() {
 		this.pcs.firePropertyChange("- - S - -", false, true);
 	}
 
-
+	//Returns the feedback after events int he game
 	public String toString() {
 		String s = "";
 		if(gameFinished) {
@@ -458,11 +485,13 @@ public class LandBaronsModel {
 		return s;
 	}
 
+	//Sets the style of a land node's tile based on the ownership of the land node
 	public String getTileStyle(int row, int col) {
 		row++; col++;
 		return getStylePreference(board[row][col].getOwnership());
 	}
-
+	
+	//Determines what style the land node has
 	private String getStylePreference(LandBaron entity) {
 		String s = "id";
 		LandBaron[] owners = new LandBaron[npcBarons.length + players.length];
@@ -480,6 +509,7 @@ public class LandBaronsModel {
 		return s;
 	}
 
+	//Determines if there is a tie
 	private boolean tiedWithSomeone(int index) {
 		if(index-1 >=0) {
 			if(standings[index].getRank() == standings[index-1].getRank())
@@ -491,6 +521,7 @@ public class LandBaronsModel {
 		return false;
 	}
 
+	//Determines the status of each player, during and at the end of the game
 	private String playerStatus(LandBaron player) {
 		String s = player.getName() + " has ";
 		if(gameFinished) {
@@ -515,7 +546,8 @@ public class LandBaronsModel {
 	public LandNode[][] getBoardClone(){
 		return board.clone();
 	}
-
+	
+	
 	public String printBoard() {
 		String s = "";
 		for(int row = 1; row < board.length-1;row++) {
@@ -528,7 +560,6 @@ public class LandBaronsModel {
 	}
 	
 	
-
 	public String printShortestPath() {
 		String s = "";
 

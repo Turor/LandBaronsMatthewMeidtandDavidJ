@@ -44,9 +44,9 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 	public void start(Stage primaryStage) {
 		try {
 			VBox root = new VBox();
-
 			Scene scene = new Scene(root,width,height);
 			primaryStage.setTitle("The Land Barons Game");
+			//ComboBox for the size of the board
 			sizeCB = new ComboBox<Integer>();
 			sizeCB.setPrefWidth(width/4);
 			sizeCB.setPrefHeight(height/12);
@@ -235,6 +235,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 		}
 	}
 	
+	//TODO display the end path
 	private void displayPath() {
 		
 	}
