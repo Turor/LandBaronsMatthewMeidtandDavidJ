@@ -186,6 +186,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 			String player, int row, int col) {
 		if(actionWasAReset(action)) {
 			resetOccurred();
+			playResetSound();
 		}else if(actionWasASizeChange(action)) {
 			sizeChangeOccurred();
 		}else if(gameIsFinished(gameProgress)) {
@@ -255,7 +256,8 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 	}
 	
 	private void playResetSound() {
-		
+		String resetSound = "../LandBarons/Resources/resetSound.wav";
+		playSound(resetSound);
 	}
 	
 	private void playGameOver() {
