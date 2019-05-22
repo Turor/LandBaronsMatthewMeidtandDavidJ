@@ -125,6 +125,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 		generateGameBoard();
 	}
 	
+	//Generates the Board in the view
 	private void generateGameBoard() {
 		board.getChildren().clear();
 		buttons = new LandButton[model.getSize()][model.getSize()];
@@ -181,7 +182,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 		handleEvent(gameProgress, actionValidity, typeOfAction, errorType, player, row, col);
 		friend.close();
 	}
-
+	//Event handler for the reset, size, etc
 	private void handleEvent(char gameProgress, char validity, char action, char errorType,
 			String player, int row, int col) {
 		if(actionWasAReset(action)) {
@@ -245,7 +246,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 			buttons[row][col].setId(model.getTileStyle(row,col)+"f");
 		}
 	}
-	
+	//The following methods are for sound effects for different actions in the game
 	private void playErrorSound() {
 		String error = "../LandBarons/Resources/errorSound.wav";
 		playSound(error);
@@ -277,11 +278,11 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 		MediaPlayer mediaPlayer = new MediaPlayer(sound);
 		mediaPlayer.play();
 	}
-	
+	//This method updates the turn indicator
 	private void updateTurnIndicator() {
 		turnIndicator.setId(model.getTurnID());
 	}
-	
+	//This method updates the game state, shows what has happened in the game
 	private void updateGameState() {
 		feedback.setText(model.toString());
 	}
@@ -299,6 +300,7 @@ public class LandBaronsView extends Application implements EventHandler<ActionEv
 		//TODO: Update the GUI based on the new size
 	}
 
+	//The following methods set character values for various events in the game
 	private boolean isValidAction(char actionValidity) {
 		return 'V' == actionValidity;
 	}

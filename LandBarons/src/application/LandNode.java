@@ -32,6 +32,7 @@ public class LandNode implements Comparable<LandNode> {
 	
 	private Coordinates coordinates;
 
+	//Landnode constructor
 	public LandNode(LandBaron owner, int row, int column) {
 		initialOwner = owner;
 		ownership = owner;
@@ -43,45 +44,53 @@ public class LandNode implements Comparable<LandNode> {
 		prev = null;
 	}
 	
+	//Returns coordinates
 	public Coordinates getCoordinates() {
 		return coordinates;
 	}
 
+	//Returns the ownership of the Land Node
 	public LandBaron getOwnership() {
 		return ownership;
 	}
 	
+	//Increases the budget by a certain amount
 	public void increaseBudget(int value) {
 		ownership.increaseBudget(value);
 	}
-	
+	//Decreases the budget by a certain amount
 	public void decreaseBudget(int value) {
 		ownership.decreaseBudget(value);
 	}
-	
+	//Determines if the land node is biddable
 	public boolean isBiddable() {
 		return ownership.isBiddable();
 	}
 	
+	//Increases the prophet by a certain amount
 	public void increaseProfit(int value) {
 		ownership.increaseProfit(value);
 	}
-	
+	//Determines if the node is traversible
 	public boolean isTraversible() {
 		return ownership.isTraversible();
 	}
 	
+	//Returns the name of the land node
 	public String getName() {
 		return ownership.getName();
 	}
 
+	//Connects this node with a neighboring node in a certain direction
 	public void connectNodes(LandNode neighbor, int direction) {
 		connections.add(neighbor);
 	}
 
+	//Returns the current bid of the land node
 	public int getBid() {
 		return bid;
 	}
+	
 	
 	public boolean isFinished() {
 		return finished;
@@ -90,6 +99,7 @@ public class LandNode implements Comparable<LandNode> {
 		finished = true;
 	}
 
+	//Makes a bid on the land, depending on who owns the land
 	public int makeBid(LandBaron owner) {
 		if(owner.equals(ownership)) {
 			decreaseBudget(1);
@@ -103,7 +113,7 @@ public class LandNode implements Comparable<LandNode> {
 			ownership = owner;
 			return bid;
 	}
-
+	//Returns the number of connections to the land node
 	public int getConnectionCount() {
 		return connections.size();
 	}
@@ -126,36 +136,39 @@ public class LandNode implements Comparable<LandNode> {
 		priority = bid;
 	}
 
+	//Returns the priority of the Land Node
 	public int getPriority() {
 		return priority;
 	}
 
+	//Sets the priority of the land node
 	public void setPriority(int newpriority) {
 		priority = newpriority;
 	}
 
-	public void setPrev(LandNode newprev) {
-		prev = newprev;
-	}
-
+	//Returns the previous node to the current land node (Used for Dijkstra)
 	public LandNode getPrevious() {
 		return prev;
 	}
 
+	//Sets the ownership of the land node
 	public void setOwnership(LandBaron newOwner) {
 		ownership = newOwner;
 	}
-
+	
+	//Sets the previous node to the current land node
 	public void setPrevious(LandNode newPrev) {
 		prev = newPrev;
 	}
 	
+	//Resets the data of the land node
 	public void reset() {
 		resetForDijkstra();
 		bid = 0;
 		ownership = initialOwner;
 	}
 
+	//The compare to method for comparing nodes to each other
 	@Override
 	public int compareTo(LandNode other) {
 		// TODO Auto-generated method stub
@@ -167,6 +180,7 @@ public class LandNode implements Comparable<LandNode> {
 			return 0;
 	}
 
+	//The to string method for information about the land node
 	public String toString() {
 		String s = "";
 		//s += ownership + "," + bid;

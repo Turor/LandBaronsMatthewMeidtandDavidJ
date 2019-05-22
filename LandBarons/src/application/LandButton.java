@@ -2,6 +2,7 @@ package application;
 
 import javafx.scene.control.Button;
 
+//This method just adds coordinates onto the button class
 public class LandButton extends Button {
 	
 	private int row;
