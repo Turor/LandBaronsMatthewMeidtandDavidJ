@@ -1,9 +1,24 @@
 /* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
 
-.label{
-	-fx-font-size:16px;
+.textArea{
+	-fx-font-size: 14px ;
 }
-.button{
+
+#normal{
+	-fx-font-size: 14px;
+	-fx-text-fill:#000000;
+}
+
+#error{
+	-fx-font-size: 14px;
+	-fx-text-fill: Red;
+	-fx-highlight-text-fill: black ;
+	-fx-highlight-fill: white;
+}
+
+#valid{
+	-fx-font-size: 14px;
+	-fx-text-fill: #000000;
 }
 
 /*Company */

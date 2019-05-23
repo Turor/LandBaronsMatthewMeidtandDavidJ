@@ -1,13 +1,17 @@
 package application;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Scanner;
 
 import org.junit.jupiter.api.Test;
 
+/**
+ * Skeletal framework for testing
+ * @author Matthew Meidt
+ * @version Spring 2019
+ *
+ */
 public class InitializationTests implements PropertyChangeListener {
 
 	private LandBaronsModel temp;

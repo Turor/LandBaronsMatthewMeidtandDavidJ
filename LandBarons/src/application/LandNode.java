@@ -2,37 +2,49 @@ package application;
 
 import java.util.ArrayList;
 
+/**
+ * Represents a tile in the game of Land Barons
+ * @author Matthew Meidt
+ * @author David Jacobson
+ * @version Spring 2019
+ *
+ */
 public class LandNode implements Comparable<LandNode> {
 
-	/**
-	 * 	-2:	Land is public land, and cannot be bought or traversed
-	 * 	-1:	Land is already owned by the company and cannot be bid on, and is traversed
-	 *   	  free of charge
-	 *	 0:	Land is currently
-	 *   1: Land is currently owned by player 1
-	 *   2: Land is currently owned by player 2
-	 */
+	/**Which entity currently owns me?*/
 	private LandBaron ownership;
 
+	/**How much am I worth?*/
 	private int bid;
 
+	/**How expensive is it to reach me?*/
 	private int priority;
 
 	public final static boolean FAILURE = false;
 
 	public final static boolean SUCCESS = true;
 	
+	/**Who should I revert ownership to when I'm reset?*/
 	private LandBaron initialOwner;
 
+	/**What is my cheapest path to the source?*/
 	private LandNode prev;
 
+	/**Who am I connected to?*/
 	private ArrayList<LandNode> connections;
 	
+	/**Have I been processed by Dijkstra?*/
 	private boolean finished;
 	
-	private Coordinates coordinates;
+	/**This is where I am*/
+	private final Coordinates coordinates;
 
-	//Landnode constructor
+	/**
+	 * 
+	 * @param owner Who is my default owner?
+	 * @param row Where am I on the board?
+	 * @param column Where am I on the board?
+	 */
 	public LandNode(LandBaron owner, int row, int column) {
 		initialOwner = owner;
 		ownership = owner;
@@ -44,63 +56,98 @@ public class LandNode implements Comparable<LandNode> {
 		prev = null;
 	}
 	
-	//Returns coordinates
+	/**
+	 * Where is the tile located on the game board
+	 * @return A set of final coordinates
+	 */
 	public Coordinates getCoordinates() {
 		return coordinates;
 	}
 
-	//Returns the ownership of the Land Node
+	/**
+	 * @return The tile's current owner
+	 */
 	public LandBaron getOwnership() {
 		return ownership;
 	}
 	
-	//Increases the budget by a certain amount
-	public void increaseBudget(int value) {
+	/**
+	 * Increases the budget of the tile's current owner
+	 * @param value
+	 */
+	private void increaseBudget(int value) {
 		ownership.increaseBudget(value);
 	}
-	//Decreases the budget by a certain amount
-	public void decreaseBudget(int value) {
+	
+	/**
+	 * Decreases the budget of the tile's current owner
+	 * @param value
+	 */
+	private void decreaseBudget(int value) {
 		ownership.decreaseBudget(value);
 	}
-	//Determines if the land node is biddable
+	
+	/**
+	 * @return Can this tile be bid on?
+	 */
 	public boolean isBiddable() {
 		return ownership.isBiddable();
 	}
 	
-	//Increases the prophet by a certain amount
+	/**
+	 * This tile is located on the cheapest path, thus the owner gains a profit
+	 * @param value
+	 */
 	public void increaseProfit(int value) {
 		ownership.increaseProfit(value);
 	}
-	//Determines if the node is traversible
+
+	/**
+	 * @return Can the tile be located on the cheapest path?
+	 */
 	public boolean isTraversible() {
 		return ownership.isTraversible();
 	}
 	
-	//Returns the name of the land node
+	/**
+	 * @return The name of the owner of the tile
+	 */
 	public String getName() {
 		return ownership.getName();
 	}
 
-	//Connects this node with a neighboring node in a certain direction
-	public void connectNodes(LandNode neighbor, int direction) {
+	/**
+	 * @param neighbor Adds a connection to a neighboring node
+	 */
+	public void connectNodes(LandNode neighbor) {
 		connections.add(neighbor);
 	}
 
-	//Returns the current bid of the land node
+	/**
+	 * @return How much this node currently costs
+	 */
 	public int getBid() {
 		return bid;
 	}
 	
-	
+	/**
+	 * @return Has this node been processed in a cheapest path calculation?
+	 */
 	public boolean isFinished() {
 		return finished;
 	}
+	/**
+	 * This node has now been processed in a cheapest path calculation
+	 */
 	public void finish() {
 		finished = true;
 	}
 
-	//Makes a bid on the land, depending on who owns the land
-	public int makeBid(LandBaron owner) {
+	/**
+	 * Process a bid on the tile
+	 * @param owner - Who made the new bid?
+	 */
+	public void makeBid(LandBaron owner) {
 		if(owner.equals(ownership)) {
 			decreaseBudget(1);
 		}else {
@@ -111,9 +158,11 @@ public class LandNode implements Comparable<LandNode> {
 			bid++;
 			priority = bid;
 			ownership = owner;
-			return bid;
 	}
-	//Returns the number of connections to the land node
+	
+	/**
+	 * @return How many tiles is this node connected to?
+	 */
 	public int getConnectionCount() {
 		return connections.size();
 	}
@@ -121,7 +170,7 @@ public class LandNode implements Comparable<LandNode> {
 	/**
 	 * Index using  0th indexing scheme
 	 * @param desired - Indexed using 0th indexing scheme
-	 * @return
+	 * @return The nth node that is connected to this node
 	 */
 	public LandNode connection(int desired) {
 		return connections.get(desired);
@@ -136,42 +185,57 @@ public class LandNode implements Comparable<LandNode> {
 		priority = bid;
 	}
 
-	//Returns the priority of the Land Node
+	/**
+	 * @return How much does it cost to reach this node?
+	 */
 	public int getPriority() {
 		return priority;
 	}
 
-	//Sets the priority of the land node
+	/**
+	 * @param newpriority - What is the cost of reaching this node?
+	 */
 	public void setPriority(int newpriority) {
 		priority = newpriority;
 	}
 
-	//Returns the previous node to the current land node (Used for Dijkstra)
+	/**
+	 * @return What is the cheapest way to reach this node?
+	 */
 	public LandNode getPrevious() {
 		return prev;
 	}
 
-	//Sets the ownership of the land node
+	/**
+	 * @param newOwner - Sets a new owner of the tile
+	 */
 	public void setOwnership(LandBaron newOwner) {
 		ownership = newOwner;
 	}
 	
-	//Sets the previous node to the current land node
+	/**
+	 * @param newPrev - Updates the cheapest path to this node
+	 */
 	public void setPrevious(LandNode newPrev) {
 		prev = newPrev;
 	}
 	
-	//Resets the data of the land node
+	/**
+	 * Resets this node to its initial state
+	 */
 	public void reset() {
 		resetForDijkstra();
 		bid = 0;
 		ownership = initialOwner;
 	}
 
-	//The compare to method for comparing nodes to each other
+	/**
+	 * @return 1 : This node is more expensive to reach than the other node
+	 *  -1 : This node is cheaper to reach than the other node
+	 *   0 : This node costs the same to reach as the other node
+	 */
 	@Override
 	public int compareTo(LandNode other) {
-		// TODO Auto-generated method stub
 		if(priority > other.getPriority())
 			return 1;
 		else if(priority < other.getPriority())
@@ -180,7 +244,9 @@ public class LandNode implements Comparable<LandNode> {
 			return 0;
 	}
 
-	//The to string method for information about the land node
+	/**
+	 * Renders the name of the owner of the node
+	 */
 	public String toString() {
 		String s = "";
 		//s += ownership + "," + bid;

@@ -2,7 +2,13 @@ package application;
 
 import javafx.scene.control.Button;
 
-//This method just adds coordinates onto the button class
+/**
+ * Extends a button so that the button can store coordinates
+ * @author Matthew Meidt
+ * @author David Jacobson
+ * @version Spring 2019
+ *
+ */
 public class LandButton extends Button {
 	
 	private int row;
